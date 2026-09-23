@@ -1,0 +1,28 @@
+<div class="notifications-page">
+  <header class="page-header">
+    <div>
+      <h1>Realtime Operational Alerts</h1>
+      <p class="subtitle">System notifications for creative task status changes, lead qualifications, and campaign events</p>
+    </div>
+    <button class="btn btn-secondary" *ngIf="notifService.unreadCount() > 0" (click)="notifService.markAllAsRead()">
+      Mark All as Read
+    </button>
+  </header>
+
+  <div class="notifications-list">
+    <div class="notif-card" *ngFor="let item of notifService.notifications()" [class.unread]="!item.isRead">
+      <div class="notif-header">
+        <span class="notif-title">{{ item.title }}</span>
+        <span class="notif-time">{{ item.createdAt | date:'short' }}</span>
+      </div>
+      <p class="notif-body">{{ item.message }}</p>
+      <div class="notif-footer" *ngIf="!item.isRead">
+        <button class="btn btn-sm btn-outline" (click)="notifService.markAsRead(item.id)">Mark as Read</button>
+      </div>
+    </div>
+
+    <div *ngIf="notifService.notifications().length === 0" class="empty-state">
+      <p>No notifications found.</p>
+    </div>
+  </div>
+</div>

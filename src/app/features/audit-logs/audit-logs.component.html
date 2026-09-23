@@ -1,0 +1,119 @@
+<div class="audit-logs-container">
+  <header class="page-header">
+    <div>
+      <h1>Security Audit Trail</h1>
+      <p class="subtitle">Real-time auditable history of authentication, user creation, role changes, and security events</p>
+    </div>
+    <button class="btn btn-secondary" (click)="fetchAuditLogs()">
+      <span class="material-symbols-outlined">refresh</span>
+      Refresh Logs
+    </button>
+  </header>
+
+  <!-- Controls Bar -->
+  <div class="controls-bar">
+    <div class="search-box">
+      <span class="material-symbols-outlined search-icon">search</span>
+      <input
+        type="text"
+        placeholder="Filter audit logs by email, action, entity..."
+        (input)="onSearch($event)"
+      />
+    </div>
+
+    <div class="filter-pills">
+      <button
+        class="pill"
+        [class.active]="actionFilter() === 'ALL'"
+        (click)="onFilterAction('ALL')"
+      >
+        All Events
+      </button>
+      <button
+        class="pill"
+        [class.active]="actionFilter() === 'LOGIN_SUCCESS'"
+        (click)="onFilterAction('LOGIN_SUCCESS')"
+      >
+        Logins
+      </button>
+      <button
+        class="pill"
+        [class.active]="actionFilter() === 'USER_CREATED'"
+        (click)="onFilterAction('USER_CREATED')"
+      >
+        User Creation
+      </button>
+      <button
+        class="pill"
+        [class.active]="actionFilter() === 'STATUS_CHANGED'"
+        (click)="onFilterAction('STATUS_CHANGED')"
+      >
+        Status Edits
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading audit trail records...</p>
+  </div>
+
+  <!-- Audit Table -->
+  <div *ngIf="!isLoading()" class="table-card">
+    <div class="table-responsive">
+      <table class="audit-table">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Actor</th>
+            <th>Action Event</th>
+            <th>Target Entity</th>
+            <th>IP & Agent</th>
+            <th>Details Diff</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let log of filteredLogs()">
+            <td class="timestamp-col">
+              {{ log.createdAt | date: 'short' }}
+            </td>
+            <td>
+              <div class="actor-info">
+                <span class="actor-email">{{ log.actorEmail || 'System' }}</span>
+                <span class="actor-id" *ngIf="log.actorId">{{ log.actorId }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="getActionBadgeClass(log.action)">
+                {{ log.action }}
+              </span>
+            </td>
+            <td>
+              <span class="entity-tag">{{ log.entityType }}: {{ log.entityId }}</span>
+            </td>
+            <td class="ip-col">
+              <div>{{ log.ipAddress || '127.0.0.1' }}</div>
+              <small class="text-muted">{{ log.userAgent | slice:0:30 }}...</small>
+            </td>
+            <td class="diff-col">
+              <div *ngIf="log.previousState" class="diff-prev">
+                <span class="diff-label">Prev:</span> {{ formatState(log.previousState) }}
+              </div>
+              <div *ngIf="log.newState" class="diff-new">
+                <span class="diff-label">New:</span> {{ formatState(log.newState) }}
+              </div>
+              <span *ngIf="!log.previousState && !log.newState" class="text-muted">-</span>
+            </td>
+          </tr>
+
+          <tr *ngIf="filteredLogs().length === 0">
+            <td colspan="6" class="empty-row">
+              No audit log entries matching criteria found.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

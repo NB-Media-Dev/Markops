@@ -1,0 +1,82 @@
+.audit-logs-container {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.filter-pills {
+  display: flex;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+
+  .pill {
+    padding: 0.375rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--mo-slate-200);
+    background-color: var(--mo-slate-100);
+    color: var(--mo-navy-800);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background-color: var(--mo-slate-200);
+    }
+
+    &.active {
+      background-color: var(--mo-orange-600);
+      color: #FFFFFF;
+      border-color: var(--mo-orange-700);
+    }
+  }
+}
+
+.actor-info {
+  display: flex;
+  flex-direction: column;
+
+  .actor-email {
+    font-weight: 600;
+    color: var(--mo-navy-900);
+  }
+
+  .actor-id {
+    font-size: 0.6875rem;
+    color: var(--mo-slate-500);
+  }
+}
+
+.diff-col {
+  font-size: 0.75rem;
+  font-family: var(--mo-font-mono);
+
+  .diff-prev {
+    color: #991B1B;
+  }
+  .diff-new {
+    color: #166534;
+  }
+  .diff-label {
+    font-weight: bold;
+  }
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem;
+  color: var(--mo-slate-500);
+
+  .spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--mo-slate-200);
+    border-top-color: var(--mo-orange-600);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+}

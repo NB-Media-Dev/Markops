@@ -1,0 +1,467 @@
+<div class="leads-page">
+  <header class="page-header" *ngIf="!embedded">
+    <div>
+      <h1>Lead Management</h1>
+      <p class="subtitle" *ngIf="!isTelecaller()">Upload Excel leads, auto-assign equally to telecallers, and track call outcomes</p>
+      <p class="subtitle" *ngIf="isTelecaller()">View and track your assigned lead queue and pipeline status</p>
+    </div>
+    <div class="header-actions">
+      <ng-container *ngIf="canUploadLeads()">
+        <button class="btn btn-emerald btn-lg shadow-sm" (click)="openExcelModal()">
+          <span class="material-symbols-outlined">upload_file</span>
+          Upload Excel
+        </button>
+        <button class="btn btn-outline" (click)="openModal()">
+          <span class="material-symbols-outlined">person_add</span>
+          Add Lead
+        </button>
+      </ng-container>
+      <div *ngIf="!canUploadLeads() && !isTelecaller()" class="role-restricted-badge">
+        <span class="material-symbols-outlined text-amber">lock</span>
+        <span>Upload Restricted to Digital Marketing Role</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Embedded Toolbar Header (Visible inside Package Works) -->
+  <div class="embedded-header-bar mb-3" *ngIf="embedded">
+    <div class="header-info">
+      <h3 *ngIf="!isTelecaller()">
+        <span class="material-symbols-outlined text-teal fs-20">groups</span>
+        Leads Workspace
+      </h3>
+      <h3 *ngIf="isTelecaller()">
+        <span class="material-symbols-outlined text-teal fs-20">groups</span>
+        Assigned Leads Workspace
+      </h3>
+      </div>
+    <div class="header-actions">
+      <ng-container *ngIf="canUploadLeads()">
+        <button class="btn btn-emerald shadow-sm" (click)="openExcelModal()">
+          <span class="material-symbols-outlined fs-18">upload_file</span>
+          Upload Excel
+        </button>
+        <button class="btn btn-outline" (click)="openModal()">
+          <span class="material-symbols-outlined fs-18">person_add</span>
+          Add Lead
+        </button>
+      </ng-container>
+      <div *ngIf="!canUploadLeads() && !isTelecaller()" class="role-restricted-badge">
+        <span class="material-symbols-outlined text-amber fs-16">lock</span>
+        <span>Upload Restricted to Digital Marketing Role</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section Tabs -->
+  <div class="section-tabs">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'LEADS_LIST'"
+      (click)="activeTab.set('LEADS_LIST')">
+      <span class="material-symbols-outlined">view_list</span>
+      {{ isTelecaller() ? 'My Assigned Leads' : 'All Leads' }} ({{ myLeadsList().length }})
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'TELECALLING_MONITOR'"
+      (click)="activeTab.set('TELECALLING_MONITOR')">
+      <span class="material-symbols-outlined">monitoring</span>
+      Telecalling Dashboard
+    </button>
+  </div>
+
+  <!-- TAB 1: ALL LEADS LIST VIEW -->
+  <ng-container *ngIf="activeTab() === 'LEADS_LIST'">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label>Status:</label>
+        <select [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event)">
+          <option value="ALL">All Statuses</option>
+          <option value="NEW">New</option>
+          <option value="ASSIGNED">Assigned</option>
+          <option value="CONTACTED">Contacted</option>
+          <option value="INTERESTED">Interested</option>
+          <option value="NOT_INTERESTED">Not Interested</option>
+          <option value="QUALIFIED">Qualified</option>
+          <option value="CONVERTED">Converted</option>
+        </select>
+      </div>
+      <div class="quick-stats">
+        <span class="stat-pill"><strong class="text-blue">{{ myLeadsList().length }}</strong> {{ isTelecaller() ? 'My Assigned Leads' : 'Total Leads' }}</span>
+        <span class="stat-pill" *ngIf="!isTelecaller()"><strong class="text-purple">{{ activeTelecallers().length }}</strong> Telecallers Active</span>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Lead Name</th>
+              <th>Contact Info</th>
+              <th>Source</th>
+              <th>Campaign</th>
+              <th>Status</th>
+              <th>Assigned Telecaller</th>
+              <th *ngIf="canUploadLeads()">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let lead of filteredLeads">
+              <td class="font-bold">{{ lead.firstName }} {{ lead.lastName }}</td>
+              <td>
+                <div class="contact-box">
+                  <span>{{ lead.phone }}</span>
+                  <span class="text-subtle" *ngIf="lead.email">{{ lead.email }}</span>
+                </div>
+              </td>
+              <td><span class="source-badge">{{ lead.source }}</span></td>
+              <td>{{ lead.campaignName }}</td>
+              <td>
+                <span class="badge" [ngClass]="{
+                  'badge-blue': lead.status === 'NEW',
+                  'badge-amber': lead.status === 'ASSIGNED' || lead.status === 'CONTACTED',
+                  'badge-purple': lead.status === 'INTERESTED',
+                  'badge-danger': lead.status === 'NOT_INTERESTED',
+                  'badge-green': lead.status === 'QUALIFIED' || lead.status === 'CONVERTED'
+                }">{{ lead.status }}</span>
+              </td>
+              <td>
+                <div class="telecaller-tag" *ngIf="lead.assigneeName">
+                  <span class="material-symbols-outlined text-teal">headset_mic</span>
+                  <span>{{ lead.assigneeName }}</span>
+                </div>
+                <span class="text-subtle" *ngIf="!lead.assigneeName">Unassigned</span>
+              </td>
+              <td *ngIf="canUploadLeads()">
+                <button class="btn btn-sm btn-outline" (click)="assignLead(lead)">
+                  <span class="material-symbols-outlined">assignment_ind</span>
+                  Reassign
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="filteredLeads.length === 0">
+              <td [attr.colspan]="canUploadLeads() ? 7 : 6" class="text-center py-4 text-subtle">
+                {{ isTelecaller() ? 'No leads assigned to you yet.' : 'No leads found. Click Upload Excel above to import leads.' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- TAB 2: TELECALLING MONITORING DASHBOARD -->
+  <ng-container *ngIf="activeTab() === 'TELECALLING_MONITOR'">
+    <div class="dashboard-overview" *ngIf="leadService.summary() as sum">
+      <!-- High Level KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card border-blue">
+          <div class="kpi-header">
+            <span class="kpi-title">Total Leads</span>
+            <span class="material-symbols-outlined icon-blue">groups</span>
+          </div>
+          <div class="kpi-value">{{ sum.totalLeads }}</div>
+          <div class="kpi-subtitle">{{ sum.assignedLeads }} Assigned | {{ sum.unassignedLeads }} Unassigned</div>
+        </div>
+
+        <div class="kpi-card border-emerald">
+          <div class="kpi-header">
+            <span class="kpi-title">Total Calls</span>
+            <span class="material-symbols-outlined icon-emerald">call</span>
+          </div>
+          <div class="kpi-value">{{ sum.totalCallsLogged }}</div>
+          <div class="kpi-subtitle">Logged across telecallers</div>
+        </div>
+
+        <div class="kpi-card border-purple">
+          <div class="kpi-header">
+            <span class="kpi-title">Interested Leads</span>
+            <span class="material-symbols-outlined icon-purple">thumb_up</span>
+          </div>
+          <div class="kpi-value">{{ sum.statusBreakdown['INTERESTED'] || 0 }}</div>
+          <div class="kpi-subtitle">{{ sum.statusBreakdown['QUALIFIED'] || 0 }} Qualified</div>
+        </div>
+
+        <div class="kpi-card border-amber">
+          <div class="kpi-header">
+            <span class="kpi-title">Telecallers</span>
+            <span class="material-symbols-outlined icon-amber">headset_mic</span>
+          </div>
+          <div class="kpi-value">{{ sum.telecallerMetrics.length }}</div>
+          <div class="kpi-subtitle">Equal distribution active</div>
+        </div>
+      </div>
+
+      <!-- Telecaller Equal Allocation & Progress Cards -->
+      <div class="card-section mt-6">
+        <div class="section-header">
+          <div>
+            <h3>Telecaller Performance</h3>
+            <p class="subtitle">Overview of lead distribution and call outcomes per telecaller</p>
+          </div>
+        </div>
+
+        <div class="telecaller-metrics-grid">
+          <div class="telecaller-metric-card" *ngFor="let tc of sum.telecallerMetrics">
+            <div class="tc-header">
+              <div class="tc-avatar">
+                <span class="material-symbols-outlined">person</span>
+              </div>
+              <div>
+                <div class="tc-name">{{ tc.fullName }}</div>
+                <div class="tc-dept">{{ tc.email }}</div>
+              </div>
+              <span class="badge badge-teal">Equal Share</span>
+            </div>
+
+            <div class="tc-stats-row">
+              <div class="tc-stat">
+                <span class="stat-label">Assigned</span>
+                <span class="stat-val font-bold text-primary">{{ tc.assignedLeadsCount }}</span>
+              </div>
+              <div class="tc-stat">
+                <span class="stat-label">Calls</span>
+                <span class="stat-val font-bold text-emerald">{{ tc.callsLoggedCount }}</span>
+              </div>
+              <div class="tc-stat">
+                <span class="stat-label">Interested</span>
+                <span class="stat-val font-bold text-purple">{{ tc.interestedCount }}</span>
+              </div>
+            </div>
+
+            <div class="progress-bar-container mt-3">
+              <div class="progress-info">
+                <span>Progress</span>
+                <span>{{ tc.assignedLeadsCount > 0 ? Math.round((tc.callsLoggedCount / tc.assignedLeadsCount) * 100) : 0 }}%</span>
+              </div>
+              <div class="progress-track">
+                <div
+                  class="progress-fill"
+                  [style.width.%]="tc.assignedLeadsCount > 0 ? Math.min(100, (tc.callsLoggedCount / tc.assignedLeadsCount) * 100) : 0">
+                </div>
+              </div>
+            </div>
+
+            <div class="call-outcomes-badges mt-3">
+              <span class="mini-badge bg-emerald-subtle" title="Attended Calls">
+                <span class="material-symbols-outlined text-emerald fs-14">call_made</span> Attended: {{ tc.attendedCount }}
+              </span>
+              <span class="mini-badge bg-amber-subtle" title="Not Attended">
+                <span class="material-symbols-outlined text-amber fs-14">phone_missed</span> Not Attended: {{ tc.notAttendedCount }}
+              </span>
+              <span class="mini-badge bg-danger-subtle" title="Not Interested">
+                <span class="material-symbols-outlined text-danger fs-14">thumb_down</span> Not Interested: {{ tc.notInterestedCount }}
+              </span>
+              <span class="mini-badge bg-slate-subtle" title="Avg Call Duration">
+                <span class="material-symbols-outlined text-slate fs-14">timer</span> Avg: {{ tc.avgDurationSeconds }}s
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Telecaller Table Breakdown -->
+      <div class="table-card mt-6">
+        <div class="card-header-flex">
+          <h3>Telecaller Overview Matrix</h3>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Telecaller Name</th>
+                <th>Department</th>
+                <th>Assigned Leads</th>
+                <th>Calls Logged</th>
+                <th>Attended</th>
+                <th>Not Attended</th>
+                <th>Interested</th>
+                <th>Not Interested</th>
+                <th>Total Duration</th>
+                <th>Connect Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let tc of sum.telecallerMetrics">
+                <td class="font-bold">
+                  <div class="user-inline">
+                    <span class="material-symbols-outlined text-teal">account_circle</span>
+                    <span>{{ tc.fullName }}</span>
+                  </div>
+                </td>
+                <td>{{ tc.department }}</td>
+                <td class="font-bold text-blue">{{ tc.assignedLeadsCount }} Leads</td>
+                <td>{{ tc.callsLoggedCount }}</td>
+                <td><span class="text-emerald font-bold">{{ tc.attendedCount }}</span></td>
+                <td><span class="text-amber">{{ tc.notAttendedCount }}</span></td>
+                <td><span class="badge badge-purple">{{ tc.interestedCount }}</span></td>
+                <td><span class="text-danger">{{ tc.notInterestedCount }}</span></td>
+                <td>{{ Math.floor(tc.totalDurationSeconds / 60) }}m {{ tc.totalDurationSeconds % 60 }}s</td>
+                <td>
+                  <span class="badge badge-green">{{ tc.conversionRate }}%</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- EXCEL UPLOAD & EQUAL AUTO-ASSIGNMENT MODAL -->
+  <div class="modal-backdrop" *ngIf="showExcelModal()">
+    <div class="modal-card modal-lg">
+      <div class="modal-header-banner">
+        <div class="header-icon-box">
+          <span class="material-symbols-outlined">table_chart</span>
+        </div>
+        <div>
+          <h2>Excel Lead Upload </h2>
+        </div>
+      </div>
+
+      <!-- Success Notification Alert -->
+      <div class="alert alert-success" *ngIf="uploadSuccessMessage()">
+        <span class="material-symbols-outlined">check_circle</span>
+        <span>{{ uploadSuccessMessage() }}</span>
+      </div>
+
+      <!-- Validation Error Alert -->
+      <div class="alert alert-danger" *ngIf="uploadValidationError()">
+        <span class="material-symbols-outlined">warning</span>
+        <span>{{ uploadValidationError() }}</span>
+      </div>
+
+      <div class="form-group mt-4">
+        <label>Campaign Name <span class="text-danger">*</span></label>
+        <input type="text" [(ngModel)]="campaignName" placeholder="Campaign Name" required />
+      </div>
+
+      <!-- File Upload & Sample Download Box -->
+      <div class="upload-drop-zone mt-3">
+        <div class="drop-icon">
+          <span class="material-symbols-outlined">cloud_upload</span>
+        </div>
+        <h4>Select Lead Sheet</h4>
+        <p class="font-bold text-slate">All 5 columns are REQUIRED: First Name, Last Name, Email, Phone, Source</p>
+
+        <div class="upload-actions-row">
+          <label class="btn btn-emerald btn-sm cursor-pointer">
+            <span class="material-symbols-outlined">folder_open</span>
+            Browse File
+            <input type="file" accept=".csv, .xlsx, .txt" (change)="onFileSelected($event)" hidden />
+          </label>
+          <button class="btn btn-text btn-sm" (click)="downloadSampleCsv()">
+            <span class="material-symbols-outlined">download</span>
+            Download Sample CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- Parsed Raw Preview Text box -->
+      <div class="form-group mt-3">
+        <label>CSV Content Preview <span class="text-danger">* (5 columns required per row)</span></label>
+        <textarea
+          rows="3"
+          [(ngModel)]="excelRawText"
+          (ngModelChange)="parseCsvText($event)"
+          placeholder="First Name, Last Name, Email, Phone, Source"></textarea>
+      </div>
+
+      <!-- Active Telecallers Equal Allocation Selector -->
+      <div class="telecallers-selection-box mt-4">
+        <div class="box-title">
+          <span class="material-symbols-outlined text-amber">group</span>
+          <span>Target Telecallers for Equal Distribution</span>
+        </div>
+        <div class="telecaller-checkboxes">
+          <label class="tc-checkbox-card" *ngFor="let tc of activeTelecallers()">
+            <input
+              type="checkbox"
+              [checked]="selectedTelecallerIds().includes(tc.id)"
+              (change)="toggleTelecallerSelection(tc.id)" />
+            <div class="tc-cb-info">
+              <span class="tc-cb-name">{{ tc.fullName }}</span>
+              <span class="tc-cb-email">{{ tc.email }}</span>
+            </div>
+          </label>
+        </div>
+      </div>
+      <div class="modal-actions mt-5">
+        <button class="btn btn-secondary" (click)="closeExcelModal()">Cancel</button>
+        <button
+          class="btn btn-emerald btn-lg"
+          (click)="submitEqualAutoAssignment()"
+          [disabled]="parsedLeads().length === 0 || selectedTelecallerIds().length === 0 || uploadValidationError() !== null">
+          <span class="material-symbols-outlined">verified</span>
+          Upload & Assign
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SINGLE MANUAL LEAD MODAL -->
+  <div class="modal-backdrop" *ngIf="showModal()">
+    <div class="modal-card">
+      <h2>Add New Lead</h2>
+      <p class="text-subtle fs-13 mb-3">All fields marked with <span class="text-danger">*</span> are strictly required.</p>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>First Name <span class="text-danger">*</span></label>
+          <input type="text" [(ngModel)]="newFirstName" placeholder="First Name" required />
+        </div>
+        <div class="form-group">
+          <label>Last Name <span class="text-danger">*</span></label>
+          <input type="text" [(ngModel)]="newLastName" placeholder="Last Name" required />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Phone Number <span class="text-danger">*</span></label>
+        <input type="text" [(ngModel)]="newPhone" placeholder="+91 9876543210" required />
+      </div>
+      <div class="form-group">
+        <label>Email Address <span class="text-danger">*</span></label>
+        <input type="email" [(ngModel)]="newEmail" placeholder="email@example.com" required />
+      </div>
+      <div class="form-group">
+        <label>Lead Source <span class="text-danger">*</span></label>
+        <input type="text" [(ngModel)]="newSource" placeholder="Digital Ads / Google Search" required />
+      </div>
+      <div class="modal-actions mt-4">
+        <button class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+        <button
+          class="btn btn-primary"
+          (click)="createLead()"
+          [disabled]="!newFirstName.trim() || !newLastName.trim() || !newEmail.trim() || !newPhone.trim() || !newSource.trim()">
+          Save Lead
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MANUAL ASSIGN MODAL -->
+  <div class="modal-backdrop" *ngIf="selectedLeadForAssign">
+    <div class="modal-card">
+      <h2>Assign Lead</h2>
+      <p>Lead: <strong>{{ selectedLeadForAssign.firstName }} {{ selectedLeadForAssign.lastName }}</strong></p>
+      <div class="form-group">
+        <label>Select Telecaller</label>
+        <select [ngModel]="selectedUserId" (change)="onUserSelectChange($event)">
+          <option *ngFor="let user of realUsersList()" [value]="user.id">
+            {{ user.fullName }}
+          </option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="selectedLeadForAssign = null">Cancel</button>
+        <button class="btn btn-primary" (click)="confirmAssign()" [disabled]="!selectedUserId">Assign</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+

@@ -1,0 +1,16 @@
+.ads-page {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.platform-badge {
+  background-color: var(--mo-status-blue-bg);
+  color: var(--mo-status-blue-text);
+  border: 1px solid var(--mo-status-blue-border);
+  font-size: 0.6875rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: var(--mo-radius-sm);
+  font-weight: 700;
+}

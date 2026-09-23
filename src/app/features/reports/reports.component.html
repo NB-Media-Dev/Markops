@@ -1,0 +1,63 @@
+<div class="reports-page">
+  <header class="page-header">
+    <div>
+      <h1>Operational & Management Reports</h1>
+      <p class="subtitle">Comprehensive analysis of campaign ROI, CPL trends, and operational efficiency</p>
+    </div>
+  </header>
+
+  <div class="metrics-overview" *ngIf="report() as r">
+    <div class="metric-card">
+      <span class="title">Total Generated Revenue</span>
+      <span class="value text-green">₹{{ r.totalRevenue | number:'1.0-0' }}</span>
+      <span class="trend">+22.4% vs target benchmark</span>
+    </div>
+    <div class="metric-card">
+      <span class="title">Overall Campaign ROI</span>
+      <span class="value text-blue">{{ r.overallRoi }}</span>
+      <span class="trend">High marketing efficiency</span>
+    </div>
+    <div class="metric-card">
+      <span class="title">Average Cost Per Lead (CPL)</span>
+      <span class="value">₹{{ r.avgCpl }}</span>
+      <span class="trend text-green">-3.8% lower than budget</span>
+    </div>
+    <div class="metric-card">
+      <span class="title">Lead Qualification Ratio</span>
+      <span class="value">{{ r.qualificationRate }}</span>
+      <span class="trend">64% leads verified</span>
+    </div>
+  </div>
+
+  <div class="reports-sections">
+    <div class="section-card">
+      <h3>End-to-End Operational Lifecycle Ratios</h3>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Lifecycle Stage</th>
+              <th>Volume</th>
+              <th>Stage Ratio</th>
+              <th>Benchmark Target</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Total Captured Leads</td>
+              <td>{{ report()?.totalLeads }}</td>
+              <td>100.0%</td>
+              <td>1,000 leads</td>
+            </tr>
+            <tr>
+              <td>Qualified Leads (Telecalling)</td>
+              <td>{{ (report()?.totalLeads || 0) * 0.642 | number:'1.0-0' }}</td>
+              <td>64.2%</td>
+              <td>60.0%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

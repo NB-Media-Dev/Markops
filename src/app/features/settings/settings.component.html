@@ -1,0 +1,39 @@
+<div class="settings-page">
+  <header class="page-header">
+    <div>
+      <h1>System Settings & Preferences</h1>
+      <p class="subtitle">Configure automated sync intervals, database connections, and operational retention policies</p>
+    </div>
+  </header>
+
+  <div class="alert alert-success" *ngIf="savedMessage()">
+    <span class="material-symbols-outlined">check_circle</span>
+    {{ savedMessage() }}
+  </div>
+
+  <div class="settings-container">
+    <div class="settings-card">
+      <h3>System Operations Configuration</h3>
+      <div class="form-group">
+        <label>Automated Sync Frequency (Minutes)</label>
+        <input type="number" [(ngModel)]="autoSyncIntervalMinutes" />
+      </div>
+    </div>
+
+    <div class="settings-card">
+      <h3>Audit & Retention Policy</h3>
+      <div class="form-group">
+        <label>Security Audit Log Retention (Days)</label>
+        <input type="number" [(ngModel)]="retentionDays" />
+      </div>
+      <div class="form-group">
+        <label>Database Storage Engine</label>
+        <input type="text" value="Prisma ORM + MySQL 8.0" disabled />
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" (click)="saveSettings()">Save Configurations</button>
+    </div>
+  </div>
+</div>

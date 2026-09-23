@@ -1,0 +1,359 @@
+<div class="targets-page">
+  <header class="page-header" *ngIf="!embedded">
+    <div>
+      <div class="header-badge">
+        <span class="material-symbols-outlined fs-16">track_changes</span>
+        <span>Marketing Operations Quota Management</span>
+      </div>
+      <h1>Telecaller Daily Target Management</h1>
+    </div>
+    <div class="header-actions">
+      <button
+        class="btn btn-primary"
+        (click)="openCommonModal()"
+        *ngIf="isManagerOrAdmin()">
+        <span class="material-symbols-outlined fs-18">tune</span>
+        Set Common Target for All Telecallers
+      </button>
+      <button
+        class="btn btn-outline"
+        [disabled]="isEvaluating()"
+        (click)="runTargetComplianceCheck()">
+        <span class="material-symbols-outlined fs-18">notifications_active</span>
+        {{ isEvaluating() ? 'Evaluating Quotas...' : 'Check Target Compliance & Notify Managers' }}
+      </button>
+    </div>
+  </header>
+
+  <!-- Evaluation Alert Summary Banner -->
+  <div class="alert-summary-banner" *ngIf="lastEvaluationSummary() as summary">
+    <div class="alert-icon-box">
+      <span class="material-symbols-outlined">warning</span>
+    </div>
+    <div class="alert-content">
+      <strong>Target Compliance Scan Completed</strong>
+      <p *ngIf="summary.alertedCount > 0">
+        Found <strong>{{ summary.alertedCount }} telecallers</strong> behind target today ({{ summary.deficitTelecallers.join(', ') }}). Alert notifications broadcast to <strong>Administrator</strong> and <strong>Marketing Manager</strong>.
+      </p>
+      <p *ngIf="summary.alertedCount === 0">
+        All active telecallers have met or are on track to achieve their daily targets! No deficit alerts required.
+      </p>
+    </div>
+    <button class="close-banner-btn" (click)="lastEvaluationSummary.set(null)">
+      <span class="material-symbols-outlined fs-18">close</span>
+    </button>
+  </div>
+
+  <!-- KPI Summary Cards (Only rendered on standalone Targets page to prevent double KPI rows in Package Works) -->
+  <ng-container *ngIf="!embedded">
+    <!-- Manager & Admin KPI Summary Cards -->
+    <div class="kpi-grid" *ngIf="isManagerOrAdmin() && summaryKpis() as kpis">
+      <div class="kpi-card">
+        <div class="kpi-icon bg-blue-subtle text-blue">
+          <span class="material-symbols-outlined">groups</span>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Active Telecallers</span>
+          <span class="kpi-value">{{ kpis.totalTelecallers }}</span>
+          <span class="kpi-sub font-medium">Monitored Daily</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon bg-emerald-subtle text-emerald">
+          <span class="material-symbols-outlined">verified</span>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Target Compliance Rate</span>
+          <span class="kpi-value text-emerald">{{ kpis.overallComplianceRatePct }}%</span>
+          <span class="kpi-sub">Overall Average</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon bg-teal-subtle text-teal">
+          <span class="material-symbols-outlined">trending_up</span>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">On-Track & Achieved</span>
+          <span class="kpi-value text-teal">{{ kpis.achievedCount + kpis.onTrackCount }}</span>
+          <span class="kpi-sub">Meeting Daily Goals</span>
+        </div>
+      </div>
+
+      <div class="kpi-card" [class.kpi-card-warning]="kpis.deficitCount > 0">
+        <div class="kpi-icon bg-amber-subtle text-amber">
+          <span class="material-symbols-outlined">report_problem</span>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Target Deficits</span>
+          <span class="kpi-value text-amber">{{ kpis.deficitCount }}</span>
+          <span class="kpi-sub text-danger font-semibold">Requires Manager Action</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Telecaller Personal Target Progress KPI Cards -->
+    <div class="kpi-grid" *ngIf="!isManagerOrAdmin() && myTargetProgress() as myTgt">
+      <div class="kpi-card">
+        <div class="kpi-icon bg-blue-subtle text-blue">
+          <span class="material-symbols-outlined">track_changes</span>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Daily Call Goal</span>
+          <span class="kpi-value">{{ myTgt.dailyCallsTarget }}</span>
+          <span class="kpi-sub font-medium">Assigned Quota</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon bg-emerald-subtle text-emerald">
+          <span class="material-symbols-outlined">call</span>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Today's Completed Calls</span>
+          <span class="kpi-value text-emerald">{{ myTgt.callsCompletedToday }}</span>
+          <span class="kpi-sub">Out of {{ myTgt.dailyCallsTarget }} calls</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon bg-purple-subtle text-purple">
+          <span class="material-symbols-outlined">stars</span>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Interested Leads Goal</span>
+          <span class="kpi-value text-purple">{{ myTgt.interestedCompletedToday }}</span>
+          <span class="kpi-sub">Goal: {{ myTgt.dailyInterestedTarget }} leads</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon bg-teal-subtle text-teal">
+          <span class="material-symbols-outlined">verified</span>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Target Progress</span>
+          <span class="kpi-value text-teal">{{ myTgt.callsAchievementPct }}%</span>
+          <span class="kpi-sub font-semibold">{{ myTgt.status }}</span>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Controls & Filters Bar -->
+  <div class="controls-card">
+    <div class="search-box">
+      <span class="material-symbols-outlined search-icon">search</span>
+      <input
+        type="text"
+        placeholder="Search telecallers by name, email, or department..."
+        [value]="searchQuery()"
+        (input)="onSearch($event)" />
+    </div>
+
+    <div class="filter-pills">
+      <button
+        class="pill-btn"
+        [class.active]="statusFilter() === 'ALL'"
+        (click)="setFilter('ALL')">
+        All Telecallers
+      </button>
+      <button
+        class="pill-btn pill-green"
+        [class.active]="statusFilter() === 'ACHIEVED'"
+        (click)="setFilter('ACHIEVED')">
+        Achieved
+      </button>
+      <button
+        class="pill-btn pill-teal"
+        [class.active]="statusFilter() === 'ON_TRACK'"
+        (click)="setFilter('ON_TRACK')">
+        On Track
+      </button>
+      <button
+        class="pill-btn pill-amber"
+        [class.active]="statusFilter() === 'BEHIND_TARGET'"
+        (click)="setFilter('BEHIND_TARGET')">
+        Behind Target
+      </button>
+      <button
+        class="pill-btn pill-danger"
+        [class.active]="statusFilter() === 'CRITICAL_DEFICIT'"
+        (click)="setFilter('CRITICAL_DEFICIT')">
+        Critical Deficit
+      </button>
+    </div>
+  </div>
+
+  <!-- Telecaller Quota Table -->
+  <div class="table-card">
+    <div class="table-card-header">
+      <div>
+        <h3>Telecaller Daily Quota & Achievement Status</h3>
+        <p class="table-subtitle">Daily goals assigned by Marketing Manager vs real-time call activities logged today</p>
+      </div>
+      <span class="badge badge-teal">{{ filteredProgressList().length }} Records</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Telecaller</th>
+            <th>Daily Call Quota</th>
+            <th>Today's Actual Calls</th>
+            <th>Quota Progress</th>
+            <th>Achievement Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredProgressList()">
+            <td>
+              <div class="telecaller-cell">
+                <div class="telecaller-avatar">
+                  {{ item.telecallerName.charAt(0) }}
+                </div>
+                <div>
+                  <span class="telecaller-name">{{ item.telecallerName }}</span>
+                  <span class="telecaller-email">{{ item.telecallerEmail }}</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="quota-pill">
+                <span class="material-symbols-outlined fs-14">call</span>
+                <span class="font-bold">{{ item.dailyCallsTarget }} Calls / Day</span>
+              </div>
+            </td>
+            <td>
+              <div class="actual-calls-cell">
+                <span class="font-bold fs-16" [ngClass]="{
+                  'text-green': item.callsCompletedToday >= item.dailyCallsTarget,
+                  'text-amber': item.callsCompletedToday < item.dailyCallsTarget
+                }">{{ item.callsCompletedToday }}</span>
+                <span class="text-subtle"> / {{ item.dailyCallsTarget }} calls</span>
+              </div>
+            </td>
+            <td>
+              <div class="progress-box">
+                <div class="progress-header">
+                  <span class="progress-pct font-bold" [ngClass]="{
+                    'text-green': item.callsAchievementPct >= 100,
+                    'text-teal': item.callsAchievementPct >= 70 && item.callsAchievementPct < 100,
+                    'text-amber': item.callsAchievementPct < 70
+                  }">{{ item.callsAchievementPct }}%</span>
+                  <span class="text-subtle fs-12">{{ item.interestedCompletedToday }} / {{ item.dailyInterestedTarget }} interested</span>
+                </div>
+                <div class="progress-bar-bg">
+                  <div
+                    class="progress-bar-fill"
+                    [ngClass]="{
+                      'bg-green': item.status === 'ACHIEVED',
+                      'bg-teal': item.status === 'ON_TRACK',
+                      'bg-amber': item.status === 'BEHIND_TARGET',
+                      'bg-danger': item.status === 'CRITICAL_DEFICIT'
+                    }"
+                    [style.width.%]="item.callsAchievementPct">
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="{
+                'badge-green': item.status === 'ACHIEVED',
+                'badge-teal': item.status === 'ON_TRACK',
+                'badge-amber': item.status === 'BEHIND_TARGET',
+                'badge-danger': item.status === 'CRITICAL_DEFICIT'
+              }">
+                <span class="status-dot"></span>
+                {{ item.status === 'ACHIEVED' ? 'Target Achieved' : (item.status === 'ON_TRACK' ? 'On Track' : (item.status === 'BEHIND_TARGET' ? 'Behind Target' : 'Critical Deficit')) }}
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-sm btn-outline" (click)="openEditModal(item)">
+                <span class="material-symbols-outlined fs-14">edit_square</span>
+                Set Quota
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredProgressList().length === 0">
+            <td colspan="6" class="text-center py-5 text-subtle">
+              No telecaller quota records match your search or filter criteria.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TARGET EDIT MODAL DRAWER -->
+  <div class="modal-backdrop" *ngIf="isEditModalOpen()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon-box">
+            <span class="material-symbols-outlined">tune</span>
+          </div>
+          <div>
+            <h2>Set Common Telecaller Target Quota</h2>
+            <p>Configure standard daily call goal applied <strong>commonly to ALL telecallers</strong></p>
+          </div>
+        </div>
+        <button class="btn-close" (click)="closeEditModal()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Common Daily Calls Target Goal (All Telecallers)</label>
+          <div class="quota-input-wrapper">
+            <span class="material-symbols-outlined input-icon">call</span>
+            <input
+              type="number"
+              min="1"
+              max="200"
+              [(ngModel)]="targetInputCalls"
+              placeholder="e.g. 30" />
+            <span class="input-unit">calls / day</span>
+          </div>
+        </div>
+
+        <!-- Quick Quota Presets -->
+        <div class="preset-section mt-2">
+          <span class="preset-label">Quick Quota Presets:</span>
+          <div class="preset-buttons">
+            <button type="button" class="preset-chip" [class.active]="targetInputCalls === 20" (click)="setPreset(20)">20 calls/day</button>
+            <button type="button" class="preset-chip" [class.active]="targetInputCalls === 30" (click)="setPreset(30)">30 calls/day</button>
+            <button type="button" class="preset-chip" [class.active]="targetInputCalls === 40" (click)="setPreset(40)">40 calls/day</button>
+            <button type="button" class="preset-chip" [class.active]="targetInputCalls === 50" (click)="setPreset(50)">50 calls/day</button>
+          </div>
+        </div>
+
+        <div class="form-group mt-3">
+          <label>Common Daily Interested Leads Goal</label>
+          <div class="quota-input-wrapper">
+            <span class="material-symbols-outlined input-icon">stars</span>
+            <input
+              type="number"
+              min="1"
+              max="50"
+              [(ngModel)]="targetInputInterested"
+              placeholder="e.g. 5" />
+            <span class="input-unit">leads / day</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions mt-4">
+        <button class="btn btn-secondary" (click)="closeEditModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="saveTarget()">
+          <span class="material-symbols-outlined fs-16">save</span>
+          Save & Apply Common Target to All Telecallers
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

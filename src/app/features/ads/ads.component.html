@@ -1,0 +1,59 @@
+<div class="ads-page">
+  <header class="page-header">
+    <div>
+      <h1>Digital Ad Account Operations</h1>
+      <p class="subtitle">Ad performance, spend, impressions, CTR, CPC, and conversion analytics</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" [disabled]="syncing()" (click)="refreshAds()">
+        <span class="material-symbols-outlined" [class.spinning]="syncing()">refresh</span>
+        {{ syncing() ? 'Refreshing...' : 'Refresh Ad Metrics' }}
+      </button>
+    </div>
+  </header>
+  <div class="alert alert-success" *ngIf="syncMessage()">
+    <span class="material-symbols-outlined">check_circle</span>
+    {{ syncMessage() }}
+  </div>
+
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Ad Name</th>
+            <th>Campaign</th>
+            <th>Platform</th>
+            <th>Status</th>
+            <th>Spend</th>
+            <th>Impressions</th>
+            <th>Clicks</th>
+            <th>CTR</th>
+            <th>CPC</th>
+            <th>Leads</th>
+            <th>CPL</th>
+            <th>Last Synced</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let ad of ads()">
+            <td class="font-bold">{{ ad.name }}</td>
+            <td>{{ ad.campaignName }}</td>
+            <td>
+              <span class="platform-badge">{{ ad.platform }}</span>
+            </td>
+            <td><span class="badge badge-success">{{ ad.status }}</span></td>
+            <td class="font-bold">₹{{ ad.spend | number:'1.2-2' }}</td>
+            <td>{{ ad.impressions | number }}</td>
+            <td>{{ ad.clicks | number }}</td>
+            <td>{{ ad.ctr }}%</td>
+            <td>₹{{ ad.cpc }}</td>
+            <td class="font-bold text-blue">{{ ad.leadsCount }}</td>
+            <td>₹{{ ad.cpl }}</td>
+            <td class="text-subtle">{{ ad.lastSyncedAt | date:'shortTime' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

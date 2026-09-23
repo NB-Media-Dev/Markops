@@ -1,0 +1,52 @@
+<div class="transactions-page">
+  <header class="page-header">
+    <div>
+      <h1>Payments & Revenue Accounting</h1>
+      <p class="subtitle">Complete history of financial payments, transaction references, and revenue ledger</p>
+    </div>
+  </header>
+
+  <div class="kpi-banner">
+    <div class="kpi-box">
+      <span class="label">Total System Revenue Recorded</span>
+      <span class="val">₹{{ totalRevenue | number:'1.2-2' }}</span>
+    </div>
+    <div class="kpi-box">
+      <span class="label">Successful Payment Count</span>
+      <span class="val">{{ txnService.transactions().length }}</span>
+    </div>
+    <div class="kpi-box">
+      <span class="label">Payment Failure Rate</span>
+      <span class="val text-green">0.0%</span>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Transaction Reference</th>
+            <th>Customer Name</th>
+            <th>Amount</th>
+            <th>Payment Method</th>
+            <th>Status</th>
+            <th>Recorded By</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let txn of txnService.transactions()">
+            <td class="font-bold text-mono">{{ txn.transactionRef }}</td>
+            <td>{{ txn.customerName }}</td>
+            <td class="font-bold text-green">₹{{ txn.amount | number:'1.2-2' }}</td>
+            <td><span class="method-chip">{{ txn.paymentMethod }}</span></td>
+            <td><span class="badge badge-success">{{ txn.paymentStatus }}</span></td>
+            <td>{{ txn.recorderName }}</td>
+            <td>{{ txn.transactionDate | date:'mediumDate' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

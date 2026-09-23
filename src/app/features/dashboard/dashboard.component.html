@@ -1,0 +1,397 @@
+<div class="executive-dashboard">
+  <!-- Page Header -->
+  <header class="page-header">
+    <div>
+      <div class="role-badge-row mb-1">
+        <span class="role-chip" [ngClass]="{
+          'chip-admin': userRole() === 'ADMINISTRATOR' || userRole() === 'MARKETING_MANAGER',
+          'chip-digital': userRole() === 'DIGITAL_MARKETING',
+          'chip-designer': userRole() === 'DESIGNER',
+          'chip-telecaller': userRole() === 'TELECALLER'
+        }">
+          {{ authService.currentUser()?.fullName || 'User' }} • {{ userRole() }}
+        </span>
+      </div>
+      <h1>{{ greeting() }}</h1>
+    </div>
+    <div class="header-actions">
+      <!-- Role-tailored action buttons -->
+      <a routerLink="/users-roles" class="btn btn-primary" *ngIf="userRole() === 'ADMINISTRATOR'">
+        <span class="material-symbols-outlined">group_add</span>
+        Manage Users
+      </a>
+      <a routerLink="/leads" class="btn btn-primary" *ngIf="userRole() === 'DIGITAL_MARKETING'">
+        <span class="material-symbols-outlined">upload_file</span>
+        Upload & Assign Leads
+      </a>
+      <a routerLink="/package-works" class="btn btn-secondary" *ngIf="userRole() === 'DESIGNER'">
+        <span class="material-symbols-outlined">inventory_2</span>
+        Package Works
+      </a>
+      <a routerLink="/telecalling" class="btn btn-primary" *ngIf="userRole() === 'TELECALLER'">
+        <span class="material-symbols-outlined">call</span>
+        Start Telecalling
+      </a>
+    </div>
+  </header>
+
+  <!-- ROLE-BASED KPI CARDS -->
+  <!-- 1. ADMINISTRATOR & MARKETING_MANAGER KPIs -->
+  <section class="kpi-grid" *ngIf="userRole() === 'ADMINISTRATOR' || userRole() === 'MARKETING_MANAGER'">
+    <div class="kpi-card card-revenue">
+      <div class="kpi-header">
+        <span class="kpi-title">Monthly Revenue</span>
+        <span class="material-symbols-outlined kpi-icon">payments</span>
+      </div>
+      <div class="kpi-value">₹{{ totalRevenue() | number:'1.0-0' }}</div>
+    </div>
+
+    <div class="kpi-card card-leads">
+      <div class="kpi-header">
+        <span class="kpi-title">Total Campaign Leads</span>
+        <span class="material-symbols-outlined kpi-icon">filter_alt</span>
+      </div>
+      <div class="kpi-value">{{ totalLeadsCount() | number }}</div>
+    </div>
+
+    <div class="kpi-card card-conversion">
+      <div class="kpi-header">
+        <span class="kpi-title">Qualification Rate</span>
+        <span class="material-symbols-outlined kpi-icon">verified</span>
+      </div>
+      <div class="kpi-value">{{ qualificationRate() }}%</div>
+    </div>
+
+    <div class="kpi-card card-tasks">
+      <div class="kpi-header">
+        <span class="kpi-title">Open Tasks</span>
+        <span class="material-symbols-outlined kpi-icon">assignment</span>
+      </div>
+      <div class="kpi-value">{{ taskService.tasks().length }}</div>
+    </div>
+  </section>
+
+  <!-- 2. DIGITAL_MARKETING KPIs -->
+  <section class="kpi-grid" *ngIf="userRole() === 'DIGITAL_MARKETING'">
+    <div class="kpi-card card-leads">
+      <div class="kpi-header">
+        <span class="kpi-title">Captured Leads</span>
+        <span class="material-symbols-outlined kpi-icon">groups</span>
+      </div>
+      <div class="kpi-value">{{ totalLeadsCount() | number }}</div>
+    </div>
+
+    <div class="kpi-card card-revenue">
+      <div class="kpi-header">
+        <span class="kpi-title">Active Campaigns</span>
+        <span class="material-symbols-outlined kpi-icon">campaign</span>
+      </div>
+      <div class="kpi-value">{{ activeCampaignsCount() }}</div>
+    </div>
+
+    <div class="kpi-card card-tasks">
+      <div class="kpi-header">
+        <span class="kpi-title">Open Package Tasks</span>
+        <span class="material-symbols-outlined kpi-icon">draw</span>
+      </div>
+      <div class="kpi-value">{{ taskService.tasks().length }}</div>
+    </div>
+
+    <div class="kpi-card card-conversion">
+      <div class="kpi-header">
+        <span class="kpi-title">Lead Qualification %</span>
+        <span class="material-symbols-outlined kpi-icon">check_circle</span>
+      </div>
+      <div class="kpi-value">{{ qualificationRate() }}%</div>
+    </div>
+  </section>
+
+  <!-- 3. DESIGNER KPIs -->
+  <section class="kpi-grid" *ngIf="userRole() === 'DESIGNER'">
+    <div class="kpi-card card-tasks">
+      <div class="kpi-header">
+        <span class="kpi-title">Assigned Tasks</span>
+        <span class="material-symbols-outlined kpi-icon">draw</span>
+      </div>
+      <div class="kpi-value">{{ designerAssignedTasks().length }}</div>
+    </div>
+
+    <div class="kpi-card card-revenue">
+      <div class="kpi-header">
+        <span class="kpi-title">In Progress / Accepted</span>
+        <span class="material-symbols-outlined kpi-icon">pending_actions</span>
+      </div>
+      <div class="kpi-value">{{ designerInProgressCount() }}</div>
+    </div>
+
+    <div class="kpi-card card-leads">
+      <div class="kpi-header">
+        <span class="kpi-title">Revision Requests</span>
+        <span class="material-symbols-outlined kpi-icon">rate_review</span>
+      </div>
+      <div class="kpi-value text-amber">{{ designerRevisionCount() }}</div>
+    </div>
+
+    <div class="kpi-card card-conversion">
+      <div class="kpi-header">
+        <span class="kpi-title">Approved Creatives</span>
+        <span class="material-symbols-outlined kpi-icon">verified</span>
+      </div>
+      <div class="kpi-value text-green">{{ designerApprovedCount() }}</div>
+    </div>
+  </section>
+
+  <!-- 4. TELECALLER KPIs -->
+  <section class="kpi-grid" *ngIf="userRole() === 'TELECALLER'">
+    <div class="kpi-card card-leads">
+      <div class="kpi-header">
+        <span class="kpi-title">Assigned Contacts</span>
+        <span class="material-symbols-outlined kpi-icon">contacts</span>
+      </div>
+      <div class="kpi-value">{{ telecallerAssignedLeads().length }}</div>
+    </div>
+
+    <div class="kpi-card card-tasks">
+      <div class="kpi-header">
+        <span class="kpi-title">Pending Calls</span>
+        <span class="material-symbols-outlined kpi-icon">call_log</span>
+      </div>
+      <div class="kpi-value text-amber">{{ telecallerPendingCallsCount() }}</div>
+    </div>
+
+    <div class="kpi-card card-conversion">
+      <div class="kpi-header">
+        <span class="kpi-title">Qualified Leads</span>
+        <span class="material-symbols-outlined kpi-icon">verified</span>
+      </div>
+      <div class="kpi-value text-green">{{ telecallerQualifiedCount() }}</div>
+    </div>
+
+    <div class="kpi-card card-revenue">
+      <div class="kpi-header">
+        <span class="kpi-title">Calls Logged</span>
+        <span class="material-symbols-outlined kpi-icon">phone_in_talk</span>
+      </div>
+      <div class="kpi-value">{{ totalCallsLoggedCount() }}</div>
+    </div>
+  </section>
+
+  <!-- FIXED PACKAGES SECTION (Careermate, Classmate, Jesus the messanger) -->
+  <section class="packages-section mt-4">
+    <div class="section-title-bar">
+      <div>
+        <h2>Packages</h2>
+        </div>
+    </div>
+
+    <div class="packages-grid">
+      <div
+        *ngFor="let pkg of fixedPackages()"
+        class="package-card"
+        [routerLink]="['/package-works']"
+        [queryParams]="{ package: pkg.name }">
+        <div class="package-card-header">
+          <div class="package-icon-box" [ngClass]="pkg.badgeClass">
+            <span class="material-symbols-outlined">{{ pkg.icon }}</span>
+          </div>
+        </div>
+        <h3 class="package-name">{{ pkg.name }}</h3>
+        <div class="package-card-footer">
+          <div class="package-stats">
+            <span><strong>{{ pkg.taskCount }}</strong> Works</span>
+            <span class="dot-separator">•</span>
+            <span><strong>{{ pkg.campaignCount }}</strong> Campaigns</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROLE-SPECIFIC MAIN WORKSPACE PANELS -->
+
+  <!-- 1. ADMIN & MARKETING MANAGER PANEL -->
+  <div class="dashboard-grid mt-4" *ngIf="userRole() === 'ADMINISTRATOR' || userRole() === 'MARKETING_MANAGER'">
+    <div class="table-card">
+      <div class="card-title-bar">
+        <h3>Campaign Performance & Spend</h3>
+        <a routerLink="/campaigns" class="link-btn d-inline-flex align-items-center gap-1">
+          All Campaigns <span class="material-symbols-outlined fs-16">arrow_forward</span>
+        </a>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Campaign Name</th>
+              <th>Status</th>
+              <th>Total Leads</th>
+              <th>Ad Spend</th>
+              <th>Avg CPL</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let cmp of recentCampaigns()">
+              <td class="font-bold">{{ cmp.name }}</td>
+              <td>
+                <span class="badge badge-success" *ngIf="cmp.status === 'ACTIVE'">ACTIVE</span>
+                <span class="badge badge-secondary" *ngIf="cmp.status !== 'ACTIVE'">PLANNING</span>
+              </td>
+              <td>{{ cmp.leads }} leads</td>
+              <td>{{ cmp.spend }}</td>
+              <td>{{ cmp.cpl }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="side-cards">
+      <div class="shortcuts-card">
+        <h3>Administrative Shortcuts</h3>
+        <div class="shortcut-links">
+          <a routerLink="/designer-tasks" class="shortcut-item">
+            <span class="material-symbols-outlined">draw</span>
+            <div><span class="item-title">Designer Tasks</span></div>
+          </a>
+          <a routerLink="/users-roles" class="shortcut-item" *ngIf="userRole() === 'ADMINISTRATOR'">
+            <span class="material-symbols-outlined">manage_accounts</span>
+            <div><span class="item-title">Users & Roles</span></div>
+          </a>
+          <a routerLink="/audit-logs" class="shortcut-item">
+            <span class="material-symbols-outlined">shield</span>
+            <div><span class="item-title">Audit Logs</span></div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. DIGITAL MARKETING PANEL -->
+  <div class="dashboard-grid mt-4" *ngIf="userRole() === 'DIGITAL_MARKETING'">
+    <div class="table-card">
+      <div class="card-title-bar">
+        <h3>Lead Generation & Channel Activity</h3>
+        <a routerLink="/leads" class="link-btn d-inline-flex align-items-center gap-1">
+          Upload Leads <span class="material-symbols-outlined fs-16">arrow_forward</span>
+        </a>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Campaign Name</th>
+              <th>Status</th>
+              <th>Leads Captured</th>
+              <th>Ad Spend</th>
+              <th>Avg CPL</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let cmp of recentCampaigns()">
+              <td class="font-bold">{{ cmp.name }}</td>
+              <td>
+                <span class="badge badge-success" *ngIf="cmp.status === 'ACTIVE'">ACTIVE</span>
+                <span class="badge badge-secondary" *ngIf="cmp.status !== 'ACTIVE'">PLANNING</span>
+              </td>
+              <td>{{ cmp.leads }} leads</td>
+              <td>{{ cmp.spend }}</td>
+              <td>{{ cmp.cpl }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="side-cards">
+      <div class="shortcuts-card">
+        <h3>Digital Marketing Tools</h3>
+        <div class="shortcut-links">
+          <a routerLink="/leads" class="shortcut-item">
+            <span class="material-symbols-outlined">upload_file</span>
+            <div><span class="item-title">Leads</span></div>
+          </a>
+          <a routerLink="/campaigns" class="shortcut-item">
+            <span class="material-symbols-outlined">campaign</span>
+            <div><span class="item-title">Campaigns</span></div>
+          </a>
+          <a routerLink="/ads" class="shortcut-item">
+            <span class="material-symbols-outlined">ads_click</span>
+            <div><span class="item-title">Ad Accounts</span></div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. DESIGNER PANEL -->
+  <div class="mt-4" *ngIf="userRole() === 'DESIGNER'">
+    <div class="section-title-bar mb-3">
+      <h3>My Creative Tasks & Submissions Workstation</h3>
+    </div>
+    <app-designer-dashboard [embedded]="true"></app-designer-dashboard>
+  </div>
+
+  <!-- 4. TELECALLER PANEL -->
+  <div class="dashboard-grid mt-4" *ngIf="userRole() === 'TELECALLER'">
+    <div class="table-card">
+      <div class="card-title-bar">
+        <h3>My Assigned Contacts & Queue</h3>
+        <a routerLink="/telecalling" class="link-btn d-inline-flex align-items-center gap-1">
+          Open Calls Workspace <span class="material-symbols-outlined fs-16">arrow_forward</span>
+        </a>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Contact Name</th>
+              <th>Phone</th>
+              <th>Campaign / Source</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let lead of telecallerAssignedLeads() | slice:0:8">
+              <td class="font-bold">{{ lead.firstName }} {{ lead.lastName }}</td>
+              <td>{{ lead.phone || '+91 9876543210' }}</td>
+              <td><span class="badge badge-purple">{{ lead.source || lead.campaignName || 'Lead Channel' }}</span></td>
+              <td>
+                <span class="badge" [ngClass]="{
+                  'badge-success': lead.status === 'QUALIFIED',
+                  'badge-amber': lead.status === 'CONTACTED' || lead.status === 'INTERESTED',
+                  'badge-blue': lead.status === 'NEW' || !lead.status
+                }">{{ lead.status || 'NEW' }}</span>
+              </td>
+            </tr>
+            <tr *ngIf="telecallerAssignedLeads().length === 0">
+              <td colspan="4" class="text-center py-4 text-subtle">
+                No contacts assigned yet. Leads assigned by Digital Marketing will appear in your queue.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="side-cards">
+      <div class="shortcuts-card">
+        <h3>Telecaller Shortcuts</h3>
+        <div class="shortcut-links">
+          <a routerLink="/telecalling" class="shortcut-item">
+            <span class="material-symbols-outlined">call</span>
+            <div><span class="item-title">Telecalling Workspace</span></div>
+          </a>
+          <a routerLink="/targets" class="shortcut-item">
+            <span class="material-symbols-outlined">track_changes</span>
+            <div><span class="item-title">Target Progress</span></div>
+          </a>
+          <a routerLink="/leads" class="shortcut-item">
+            <span class="material-symbols-outlined">groups</span>
+            <div><span class="item-title">Assigned Leads</span></div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

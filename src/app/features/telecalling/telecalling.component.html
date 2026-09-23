@@ -1,0 +1,307 @@
+<div class="telecalling-page">
+  <header class="page-header" *ngIf="!embedded">
+    <div>
+      <h1>Telecalling Operations</h1>
+      <p class="subtitle">Log call activity, status, duration, and follow-ups</p>
+    </div>
+    <div class="user-badge" *ngIf="authService.currentUser() as user">
+      <span class="material-symbols-outlined text-teal">account_circle</span>
+      <div>
+        <span class="user-name">{{ user.fullName }}</span>
+        <span class="user-role">{{ user.role }}</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- TOP ROLE-BASED KPI CARDS (Only rendered on standalone Telecalling page to prevent double KPI rows in Package Works) -->
+  <ng-container *ngIf="!embedded">
+    <!-- 1. Telecaller Personal KPI Cards -->
+    <div class="telecaller-kpi-row mt-2" *ngIf="isTelecaller() && myStats() as stats">
+      <div class="mini-kpi-card bg-blue-light">
+        <span class="kpi-label">Assigned Queue</span>
+        <span class="kpi-num text-blue">{{ stats.assignedCount }}</span>
+        <span class="kpi-sub">Leads</span>
+      </div>
+      <div class="mini-kpi-card bg-emerald-light">
+        <span class="kpi-label">Calls Logged</span>
+        <span class="kpi-num text-emerald">{{ stats.callsCount }}</span>
+        <span class="kpi-sub">Attended: {{ stats.attendedCount }} | Not Attended: {{ stats.notAttendedCount }}</span>
+      </div>
+      <div class="mini-kpi-card bg-purple-light">
+        <span class="kpi-label">Interested Leads</span>
+        <span class="kpi-num text-purple">{{ stats.interestedCount }}</span>
+        <span class="kpi-sub">Opportunities</span>
+      </div>
+      <div class="mini-kpi-card bg-amber-light">
+        <span class="kpi-label">Not Interested</span>
+        <span class="kpi-num text-amber">{{ stats.notInterestedCount }}</span>
+        <span class="kpi-sub">Closed / Lost</span>
+      </div>
+    </div>
+
+    <!-- 2. Admin & Manager Team KPI Overview Cards -->
+    <div class="telecaller-kpi-row mt-2" *ngIf="!isTelecaller() && teamSummaryKpis() as team">
+      <div class="mini-kpi-card bg-blue-light">
+        <span class="kpi-label">Active Telecallers</span>
+        <span class="kpi-num text-blue">{{ team.activeTelecallers }}</span>
+        <span class="kpi-sub">Team Members</span>
+      </div>
+      <div class="mini-kpi-card bg-emerald-light">
+        <span class="kpi-label">Total Calls Logged</span>
+        <span class="kpi-num text-emerald">{{ team.totalCalls }}</span>
+        <span class="kpi-sub">Across All Channels</span>
+      </div>
+      <div class="mini-kpi-card bg-purple-light">
+        <span class="kpi-label">Interested Opportunities</span>
+        <span class="kpi-num text-purple">{{ team.interestedLeads }}</span>
+        <span class="kpi-sub">Qualified Leads</span>
+      </div>
+      <div class="mini-kpi-card bg-teal-light">
+        <span class="kpi-label">Team Conversion Rate</span>
+        <span class="kpi-num text-teal">{{ team.avgConversionRate }}%</span>
+        <span class="kpi-sub">Average Performance</span>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Telecaller Team Performance Overview Table (Admin, Manager, Digital Marketing View) -->
+  <div class="card mt-4" *ngIf="isAdmin() || isManager() || authService.currentUser()?.role === 'DIGITAL_MARKETING'">
+    <div class="card-header">
+      <div class="header-title-group">
+        <span class="material-symbols-outlined text-teal fs-20">analytics</span>
+        <h3>Telecaller Team Performance Ratios</h3>
+      </div>
+      <span class="badge badge-teal">{{ telecallerPerformanceList().length }} Active Telecallers</span>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Telecaller</th>
+            <th>Assigned Queue</th>
+            <th>Calls Logged</th>
+            <th>Attended / Not Attended</th>
+            <th>Interested Leads</th>
+            <th>Avg Call Duration</th>
+            <th>Conversion Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let tc of telecallerPerformanceList()">
+            <td>
+              <div class="user-meta-cell">
+                <span class="font-bold text-dark">{{ tc.fullName }}</span>
+                <span class="text-subtle fs-12">{{ tc.email }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-blue font-bold">{{ tc.assignedLeadsCount }} Leads</span>
+            </td>
+            <td>
+              <span class="font-bold text-emerald">{{ tc.callsLoggedCount }} Calls</span>
+            </td>
+            <td>
+              <span class="text-green font-bold">{{ tc.attendedCount }}</span>
+              <span class="text-subtle"> / </span>
+              <span class="text-amber font-bold">{{ tc.notAttendedCount }}</span>
+            </td>
+            <td>
+              <span class="badge badge-purple font-bold">{{ tc.interestedCount }} Interested</span>
+            </td>
+            <td>
+              <span class="font-bold">{{ tc.avgDurationSeconds }}s</span>
+            </td>
+            <td>
+              <div class="conversion-progress-box">
+                <span class="font-bold text-teal">{{ tc.conversionRate }}%</span>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill" [style.width.%]="tc.conversionRate"></div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="telecallerPerformanceList().length === 0">
+            <td colspan="7" class="text-center py-4 text-subtle">
+              No telecaller metrics registered yet.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="queue-filter-bar mt-4" *ngIf="!isTelecaller()">
+    <div class="btn-group">
+      <button 
+        class="btn btn-sm" 
+        [class.btn-primary]="queueFilter() === 'MY_LEADS'"
+        [class.btn-outline]="queueFilter() !== 'MY_LEADS'"
+        (click)="queueFilter.set('MY_LEADS')">
+        <span class="material-symbols-outlined fs-16">filter_list</span>
+        My Assigned Leads ({{ assignedLeads().length }})
+      </button>
+      <button 
+        class="btn btn-sm" 
+        [class.btn-primary]="queueFilter() === 'ALL_LEADS'"
+        [class.btn-outline]="queueFilter() !== 'ALL_LEADS'"
+        (click)="queueFilter.set('ALL_LEADS')">
+        <span class="material-symbols-outlined fs-16">groups</span>
+        All Team Queue ({{ leadService.leads().length }})
+      </button>
+    </div>
+  </div>
+
+  <div class="telecalling-grid mt-3">
+    <!-- Call Queue Table -->
+    <div class="card">
+      <div class="card-header">
+        <h3>{{ isTelecaller() ? 'My Assigned Leads Queue' : 'Assigned Queue' }}</h3>
+        <span class="badge badge-teal">{{ assignedLeads().length }} Leads</span>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Lead Name</th>
+              <th>Phone Number</th>
+              <th>Status</th>
+              <th>Assigned To</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let lead of assignedLeads()">
+              <td class="font-bold">{{ lead.firstName }} {{ lead.lastName }}</td>
+              <td>
+                <span class="phone-link">
+                  <span class="material-symbols-outlined fs-14">call</span>
+                  {{ lead.phone }}
+                </span>
+              </td>
+              <td>
+                <span class="badge" [ngClass]="{
+                  'badge-blue': lead.status === 'NEW',
+                  'badge-amber': lead.status === 'ASSIGNED' || lead.status === 'CONTACTED',
+                  'badge-purple': lead.status === 'INTERESTED',
+                  'badge-danger': lead.status === 'NOT_INTERESTED',
+                  'badge-green': lead.status === 'QUALIFIED' || lead.status === 'CONVERTED'
+                }">{{ lead.status }}</span>
+              </td>
+              <td>{{ lead.assigneeName || 'Unassigned' }}</td>
+              <td>
+                <button *ngIf="canLogCalls()" class="btn btn-sm btn-primary" (click)="openCallDrawer(lead)">
+                  <span class="material-symbols-outlined">call</span>
+                  Log Call
+                </button>
+                <span *ngIf="!canLogCalls()" class="badge badge-secondary fs-12">
+                  <span class="material-symbols-outlined fs-14">visibility</span>
+                  View-Only
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="assignedLeads().length === 0">
+              <td colspan="5" class="text-center py-4 text-subtle">
+                No leads currently in queue.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Recent Call Activities Log -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Recent Call Activities</h3>
+      </div>
+      <div class="call-log-list">
+        <div class="call-log-item" *ngFor="let call of leadService.calls()">
+          <div class="call-log-header">
+            <span class="lead-title font-bold">{{ call.leadName }}</span>
+            <span class="badge" [ngClass]="{
+              'badge-green': call.outcome === 'INTERESTED' || call.outcome === 'QUALIFIED',
+              'badge-danger': call.outcome === 'NOT_INTERESTED',
+              'badge-amber': call.outcome === 'NO_ANSWER' || call.outcome === 'BUSY',
+              'badge-blue': call.outcome === 'CONNECTED'
+            }">{{ call.outcome }}</span>
+          </div>
+          <p class="call-remarks">{{ call.remarks }}</p>
+          <div class="call-meta">
+            <span><span class="material-symbols-outlined fs-14">timer</span> {{ call.durationSeconds }}s</span>
+            <span><span class="material-symbols-outlined fs-14">person</span> {{ call.telecallerName }}</span>
+            <span>{{ call.calledAt | date:'shortTime' }}</span>
+          </div>
+        </div>
+        <div *ngIf="leadService.calls().length === 0" class="text-center py-4 text-subtle">
+          No call activities logged yet.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALL LOGGING MODAL DRAWER -->
+  <div class="modal-backdrop" *ngIf="selectedLeadForCall()">
+    <div class="modal-card">
+      <div class="modal-call-header">
+        <div class="call-icon-box">
+          <span class="material-symbols-outlined">call</span>
+        </div>
+        <div>
+          <h2>Log Call Activity</h2>
+          <p>Calling <strong>{{ selectedLeadForCall()?.firstName }} {{ selectedLeadForCall()?.lastName }}</strong> ({{ selectedLeadForCall()?.phone }})</p>
+        </div>
+      </div>
+
+      <!-- Call Outcome Status Selector -->
+      <div class="form-group mt-3">
+        <label>Call Outcome</label>
+        <select [(ngModel)]="callOutcome">
+          <option value="CONNECTED">Connected</option>
+          <option value="NO_ANSWER">No Answer</option>
+          <option value="BUSY">Line Busy</option>
+          <option value="WRONG_NUMBER">Wrong Number</option>
+          <option value="INTERESTED">Interested</option>
+          <option value="NOT_INTERESTED">Not Interested</option>
+          <option value="QUALIFIED">Qualified</option>
+        </select>
+      </div>
+
+      <!-- Call Duration & Quick Presets -->
+      <div class="form-group mt-3">
+        <label>Call Duration (Seconds)</label>
+        <div class="duration-input-row">
+          <input type="number" [(ngModel)]="callDuration" />
+          <div class="duration-presets">
+            <button type="button" class="preset-btn" (click)="setDurationPreset(30)">30s</button>
+            <button type="button" class="preset-btn" (click)="setDurationPreset(60)">1m</button>
+            <button type="button" class="preset-btn" (click)="setDurationPreset(120)">2m</button>
+            <button type="button" class="preset-btn" (click)="setDurationPreset(300)">5m</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row mt-3">
+        <div class="form-group">
+          <label>Schedule Follow-up</label>
+          <input type="date" [(ngModel)]="followUpDate" />
+        </div>
+        <div class="form-group">
+          <label>Next Action</label>
+          <input type="text" [(ngModel)]="nextAction" placeholder="e.g. Call back tomorrow" />
+        </div>
+      </div>
+
+      <div class="form-group mt-3">
+        <label>Call Remarks</label>
+        <textarea rows="3" [(ngModel)]="callRemarks" placeholder="Enter key discussion notes..."></textarea>
+      </div>
+
+      <div class="modal-actions mt-4">
+        <button class="btn btn-secondary" (click)="closeDrawer()">Cancel</button>
+        <button class="btn btn-primary" (click)="submitCallLog()">Save Call Log</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+

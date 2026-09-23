@@ -1,0 +1,100 @@
+<div class="mo-dashboard-layout full-width-layout">
+
+  <main class="mo-main-content">
+    <header class="top-navbar">
+      <div class="navbar-left">
+        <a routerLink="/dashboard" class="brand-link">
+          <div class="brand-logo">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="brand-text">MARKOPS</span>
+        </a>
+        <a routerLink="/dashboard" class="nav-home-btn" routerLinkActive="active">
+          <span class="material-symbols-outlined fs-18">home</span>
+          Dashboard
+        </a>
+      </div>
+
+      <div class="navbar-right">
+        <!-- Notification Bell Button -->
+        <div class="notification-wrapper">
+          <button class="notif-bell-btn" (click)="toggleNotificationFlyout()" title="View Notifications">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span class="bell-badge" *ngIf="notifService.unreadCount() > 0">
+              {{ notifService.unreadCount() }}
+            </span>
+          </button>
+
+          <!-- Notification Dropdown Flyout -->
+          <div class="notif-dropdown" *ngIf="isNotificationFlyoutOpen()">
+            <div class="dropdown-header">
+              <h4>System Notifications</h4>
+              <div class="dropdown-actions">
+                <button class="mark-all-btn" (click)="notifService.markAllAsRead()">Mark all read</button>
+                <button class="close-notif-btn" (click)="closeNotificationFlyout()">×</button>
+              </div>
+            </div>
+
+            <div class="notif-items-list">
+              <div
+                class="notif-item"
+                *ngFor="let item of notifService.notifications()"
+                [class.unread]="!item.isRead"
+                (click)="notifService.markAsRead(item.id)"
+              >
+                <div class="notif-icon" [ngClass]="item.type.toLowerCase()">
+                  @switch (item.type) {
+                    @case ('SUCCESS') { <span class="material-symbols-outlined fs-16">check_circle</span> }
+                    @case ('WARNING') { <span class="material-symbols-outlined fs-16">warning</span> }
+                    @case ('ALERT') { <span class="material-symbols-outlined fs-16">bolt</span> }
+                    @default { <span class="material-symbols-outlined fs-16">info</span> }
+                  }
+                </div>
+                <div class="notif-content">
+                  <div class="notif-title">{{ item.title }}</div>
+                  <div class="notif-message">{{ item.message }}</div>
+                  <div class="notif-time">{{ item.createdAt | date:'shortTime' }}</div>
+                </div>
+              </div>
+
+              <div *ngIf="notifService.notifications().length === 0" class="empty-notif">
+                No new notifications.
+              </div>
+            </div>
+
+            <div class="dropdown-footer">
+              <a [routerLink]="['/notifications']" (click)="closeNotificationFlyout()">View All Notifications</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-user-badge">
+          <div class="avatar-circle">
+            {{ (authService.currentUser()?.fullName || 'A')[0] }}
+          </div>
+          <div class="user-details">
+            <span class="name-str">{{ authService.currentUser()?.fullName || 'System Admin' }}</span>
+            <span class="role-str">{{ roleDisplayLabel() }}</span>
+          </div>
+        </div>
+
+        <button class="header-logout-btn" (click)="logout()" title="Sign Out">
+          <span class="material-symbols-outlined fs-18">logout</span>
+          <span>Logout</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="content-viewport">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+
+</div>
+
+

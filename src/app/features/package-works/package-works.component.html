@@ -1,0 +1,843 @@
+<div class="package-works-page">
+  <!-- Top Navigation & Header -->
+  <header class="page-header">
+    <div>
+      <a routerLink="/dashboard" class="back-link">
+        <span class="material-symbols-outlined fs-16">arrow_back</span>
+        Back to Dashboard
+      </a>
+      <h1>{{ activePackageMeta().name }}</h1>
+    </div>
+
+     <div class="package-dropdown-card">
+    <div class="package-select-controls">
+      <div class="package-select-wrapper">
+        <span class="material-symbols-outlined select-lead-icon">{{ activePackageMeta().icon }}</span>
+        <select
+          id="activePackageSelect"
+          class="package-dropdown-select"
+          [ngModel]="activePackageName()"
+          (change)="onPackageSelectChange($event)">
+          <option *ngFor="let pkg of availablePackages" [value]="pkg.name">
+            {{ pkg.name }} Package
+          </option>
+        </select>
+        <span class="material-symbols-outlined select-arrow-icon">expand_more</span>
+      </div>
+    </div>
+  </div>
+  </header>
+  <!-- Role-Tailored Package Summary KPIs -->
+  <div class="kpi-grid" *ngIf="packageMetrics() as m">
+    <!-- Admin & Manager View -->
+    <ng-container *ngIf="currentRole() === 'ADMINISTRATOR' || currentRole() === 'MARKETING_MANAGER' || currentRole() === 'DIGITAL_MARKETING'">
+      <div class="kpi-card">
+        <div class="kpi-icon bg-blue-subtle text-blue">
+          <span class="material-symbols-outlined">assignment</span>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-title">Package Works</span>
+          <span class="kpi-value">{{ m.totalTasks }}</span>
+          <span class="kpi-sub">Total Registered</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon bg-amber-subtle text-amber">
+          <span class="material-symbols-outlined">pending_actions</span>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-title">In Progress</span>
+          <span class="kpi-value text-amber">{{ m.inProgressTasks }}</span>
+          <span class="kpi-sub">Active Canvas</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon bg-emerald-subtle text-emerald">
+          <span class="material-symbols-outlined">task_alt</span>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-title">Completed</span>
+          <span class="kpi-value text-emerald">{{ m.completedTasks }}</span>
+          <span class="kpi-sub">Approved Works</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon bg-purple-subtle text-purple">
+          <span class="material-symbols-outlined">campaign</span>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-title">Campaigns & Leads</span>
+          <span class="kpi-value text-purple">{{ m.totalCampaigns }}</span>
+          <span class="kpi-sub">{{ m.totalLeads }} Total Leads</span>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Designer View -->
+    <ng-container *ngIf="currentRole() === 'DESIGNER'">
+      <div class="kpi-card">
+        <div class="kpi-icon bg-blue-subtle text-blue">
+          <span class="material-symbols-outlined">draw</span>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-title">My Package Tasks</span>
+          <span class="kpi-value">{{ m.totalTasks }}</span>
+          <span class="kpi-sub">Assigned to Me</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon bg-amber-subtle text-amber">
+          <span class="material-symbols-outlined">pending_actions</span>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-title">In Progress</span>
+          <span class="kpi-value text-amber">{{ m.inProgressTasks }}</span>
+          <span class="kpi-sub">Canvas Work</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon bg-emerald-subtle text-emerald">
+          <span class="material-symbols-outlined">task_alt</span>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-title">Approved Works</span>
+          <span class="kpi-value text-emerald">{{ m.completedTasks }}</span>
+          <span class="kpi-sub">Completed</span>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Telecaller View -->
+    <ng-container *ngIf="currentRole() === 'TELECALLER'">
+      <div class="kpi-card">
+        <div class="kpi-icon bg-blue-subtle text-blue">
+          <span class="material-symbols-outlined">groups</span>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-title">Package Leads</span>
+          <span class="kpi-value text-blue">{{ m.totalLeads }}</span>
+          <span class="kpi-sub">Assigned Queue</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon bg-purple-subtle text-purple">
+          <span class="material-symbols-outlined">phone_in_talk</span>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-title">Logged Calls</span>
+          <span class="kpi-value text-purple">{{ filteredCalls().length }}</span>
+          <span class="kpi-sub">Package Activities</span>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+
+  <!-- Role-Based Package Operations Workspace Card -->
+  <div class="works-container-card">
+    <div class="works-header-bar">
+      <div class="works-tabs">
+        <button
+          *ngFor="let op of roleOperations()"
+          class="works-tab-btn"
+          [class.active]="activeOperationTab() === op.id"
+          (click)="selectOperationTab(op.id)">
+          <span class="material-symbols-outlined fs-18">{{ op.icon }}</span>
+          <span>{{ op.label }}</span>
+          <span class="tab-badge" *ngIf="op.badge">{{ op.badge }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tasks / Works View (Embedded Designer Tasks Dashboard) -->
+    <div *ngIf="activeOperationTab() === 'TASKS' || activeOperationTab() === 'WORKS' || activeOperationTab() === 'SUBMISSIONS' || activeOperationTab() === 'REVISIONS' || activeOperationTab() === 'FILES'">
+      <app-designer-dashboard [packageFilter]="activePackageName()" [embedded]="true"></app-designer-dashboard>
+    </div>
+
+    <!-- Campaigns View -->
+    <div class="table-responsive" *ngIf="activeOperationTab() === 'CAMPAIGNS'">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Campaign Name</th>
+            <th>Status</th>
+            <th>Leads</th>
+            <th>Ad Spend</th>
+            <th>Owner</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let cmp of filteredCampaigns()">
+            <td class="font-bold">{{ cmp.name }}</td>
+            <td>
+              <span class="badge badge-green" *ngIf="cmp.status === 'ACTIVE'">ACTIVE</span>
+              <span class="badge badge-secondary" *ngIf="cmp.status !== 'ACTIVE'">{{ cmp.status }}</span>
+            </td>
+            <td>{{ cmp.leadsCount || 0 }} leads</td>
+            <td>₹{{ (cmp.spend || 0) | number }}</td>
+            <td>{{ cmp.ownerName || 'Marketing Manager' }}</td>
+          </tr>
+          <tr *ngIf="filteredCampaigns().length === 0">
+            <td colspan="5" class="text-center py-5 text-subtle">
+              <div class="empty-state">
+                <span class="material-symbols-outlined empty-icon">campaign</span>
+                <h3>No dedicated campaigns registered for {{ activePackageMeta().name }} package yet</h3>
+                <p>Campaigns linked to {{ activePackageMeta().name }} lead channels will be displayed here.</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Leads View (Embedded Leads Component) -->
+    <div *ngIf="activeOperationTab() === 'LEADS'">
+      <app-leads [embedded]="true"></app-leads>
+    </div>
+
+    <!-- Telecalling Operations View -->
+    <div *ngIf="activeOperationTab() === 'TELECALLING'">
+      <app-telecalling [embedded]="true"></app-telecalling>
+    </div>
+
+    <!-- Targets & Quotas View -->
+    <div *ngIf="activeOperationTab() === 'TARGETS'">
+      <app-targets [embedded]="true"></app-targets>
+    </div>
+
+    <!-- Transactions & Ad Metrics View -->
+    <div class="table-responsive" *ngIf="activeOperationTab() === 'TRANSACTIONS'">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Transaction Reference</th>
+            <th>Customer / Lead</th>
+            <th>Package</th>
+            <th>Amount</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let txn of filteredTransactions()">
+            <td class="font-bold">{{ txn.id }}</td>
+            <td>{{ txn.customerName || 'Customer' }}</td>
+            <td><span class="badge badge-purple">{{ activePackageMeta().name }}</span></td>
+            <td class="font-bold text-green">₹{{ txn.amount | number }}</td>
+            <td>{{ txn.transactionDate | date:'short' }}</td>
+          </tr>
+          <tr *ngIf="filteredTransactions().length === 0">
+            <td colspan="5" class="text-center py-5 text-subtle">
+              <div class="empty-state">
+                <span class="material-symbols-outlined empty-icon">payments</span>
+                <h3>No conversion transactions recorded for {{ activePackageMeta().name }} package yet</h3>
+                <p>Revenue and payment conversions for {{ activePackageMeta().name }} will be logged here.</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Reports & Analytics In-Page Dashboard View -->
+    <div class="p-4" *ngIf="activeOperationTab() === 'REPORTS'">
+      <div class="package-reports-panel" *ngIf="packageReportSummary() as rep">
+        <div class="reports-header-row mb-3">
+          <h3>
+            <span class="material-symbols-outlined text-blue fs-20">analytics</span>
+            {{ activePackageMeta().name }} Performance & Analytics Dashboard
+          </h3>
+          <span class="badge badge-blue font-bold">Real-time Metrics</span>
+        </div>
+
+        <div class="reports-metrics-grid">
+          <div class="rep-card">
+            <span class="rep-label">Package Revenue</span>
+            <span class="rep-val text-green">₹{{ rep.totalRevenue | number }}</span>
+            <span class="rep-sub">Total Conversions</span>
+          </div>
+
+          <div class="rep-card">
+            <span class="rep-label">Campaign Spend</span>
+            <span class="rep-val text-blue">₹{{ rep.totalSpend | number }}</span>
+            <span class="rep-sub">Ad Spend Allocation</span>
+          </div>
+
+          <div class="rep-card">
+            <span class="rep-label">Qualification Rate</span>
+            <span class="rep-val text-purple">{{ rep.qualificationRate }}</span>
+            <span class="rep-sub">Lead Pipeline Quality</span>
+          </div>
+
+          <div class="rep-card">
+            <span class="rep-label">Average CPL</span>
+            <span class="rep-val text-amber">{{ rep.avgCpl }}</span>
+            <span class="rep-sub">Cost Per Lead</span>
+          </div>
+
+          <div class="rep-card">
+            <span class="rep-label">Estimated ROI</span>
+            <span class="rep-val text-teal">{{ rep.roi }}</span>
+            <span class="rep-sub">Return on Investment</span>
+          </div>
+
+          <div class="rep-card">
+            <span class="rep-label">Work Delivery Speed</span>
+            <span class="rep-val text-emerald">{{ rep.completedTasksPct }}%</span>
+            <span class="rep-sub">Approved Works</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audit Logs In-Page View -->
+    <div class="p-4" *ngIf="activeOperationTab() === 'AUDITS'">
+      <div class="package-audits-panel">
+        <div class="audits-header-row mb-3">
+          <h3>
+            <span class="material-symbols-outlined text-purple fs-20">shield</span>
+            {{ activePackageMeta().name }} Activity & Security Audit Logs
+          </h3>
+          <span class="badge badge-purple">{{ filteredAuditLogs().length }} Entries</span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Actor Email</th>
+                <th>Action Performed</th>
+                <th>Entity Module</th>
+                <th>Target Reference</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let log of filteredAuditLogs()">
+                <td>{{ log.createdAt | date:'short' }}</td>
+                <td class="font-bold">{{ log.actorEmail || 'System Admin' }}</td>
+                <td>
+                  <span class="badge badge-blue">{{ log.action }}</span>
+                </td>
+                <td>{{ log.entityType }}</td>
+                <td class="font-medium">{{ log.entityId }}</td>
+              </tr>
+              <tr *ngIf="filteredAuditLogs().length === 0">
+                <td colspan="5" class="text-center py-4 text-subtle">
+                  No audit entries recorded for {{ activePackageMeta().name }} package yet.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATE TASK FOR PACKAGE MODAL -->
+  <div class="modal-backdrop" *ngIf="isCreateTaskModalOpen()" (click)="closeCreateTaskModal()">
+    <div class="modal-box create-task-modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon-badge">
+            <span class="material-symbols-outlined">{{ activePackageMeta().icon }}</span>
+          </div>
+          <div>
+            <h2>Create {{ activePackageMeta().name }} Task</h2>
+            <span class="modal-subtitle">Package Workspace: <strong>{{ activePackageMeta().name }}</strong></span>
+          </div>
+        </div>
+        <button class="close-btn" (click)="closeCreateTaskModal()" title="Close">&times;</button>
+      </div>
+
+      <form [formGroup]="createTaskForm" (ngSubmit)="onSubmitCreateTask()">
+        <div class="modal-body">
+          <!-- Task Title -->
+          <div class="form-group">
+            <label for="taskTitle">Task Title <span class="required-star">*</span></label>
+            <div class="input-with-icon">
+              <span class="material-symbols-outlined input-icon">edit_note</span>
+              <input
+                id="taskTitle"
+                type="text"
+                formControlName="title"
+                placeholder="e.g. {{ activePackageMeta().name }} Social Media Banner Design"
+                class="form-input" />
+            </div>
+          </div>
+
+          <!-- Description & Creative Brief -->
+          <div class="form-group">
+            <label for="taskDesc">Creative Brief & Design Instructions</label>
+            <textarea
+              id="taskDesc"
+              formControlName="description"
+              rows="3"
+              placeholder="Provide design specifications, dimensions, branding guidelines, key copy..."
+              class="form-input textarea-input"></textarea>
+          </div>
+
+          <!-- Custom File Upload Dropzone -->
+          <div class="form-group">
+            <label>Attach Content Document for Designer</label>
+            <div class="file-upload-zone" [class.has-file]="createdBriefFileName()">
+              <input
+                type="file"
+                (change)="onTaskBriefFileSelected($event)"
+                accept="image/*,video/*,.pdf,.doc,.docx,.txt,.md,.json,.csv"
+                class="file-input-hidden"
+                id="briefFileInput" />
+              <label for="briefFileInput" class="file-upload-label">
+                <div class="upload-icon-circle">
+                  <span class="material-symbols-outlined">{{ createdBriefFileName() ? 'check_circle' : 'cloud_upload' }}</span>
+                </div>
+                <div class="upload-text-content">
+                  <span class="upload-main-text" *ngIf="!createdBriefFileName()">Click or drag document to attach brief</span>
+                  <span class="upload-main-text text-success font-bold" *ngIf="createdBriefFileName()">Attached: {{ createdBriefFileName() }}</span>
+                  <span class="upload-sub-text">Supports PDF, DOCX, TXT, Images, Markdown & CSV</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Row: Designer & Priority -->
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label for="assignedDesigner">Assign to Designer <span class="required-star">*</span></label>
+              <div class="select-wrapper">
+                <span class="material-symbols-outlined select-icon">person</span>
+                <select id="assignedDesigner" formControlName="assignedTo" class="form-input custom-select">
+                  <option value="" disabled>Select Designer</option>
+                  <option *ngFor="let d of realDesignersList()" [value]="d.id"> {{ d.name }}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group col-6">
+              <label for="taskPriority">Task Priority <span class="required-star">*</span></label>
+              <div class="select-wrapper">
+                <span class="material-symbols-outlined select-icon">flag</span>
+                <select id="taskPriority" formControlName="priority" class="form-input custom-select">
+                  <option value="LOW">Low Priority</option>
+                  <option value="MEDIUM">Medium Priority</option>
+                  <option value="HIGH">High Priority</option>
+                  <option value="URGENT">Urgent Priority</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Due Date -->
+          <div class="form-group">
+            <label for="taskDueDate">Target Completion Date <span class="required-star">*</span></label>
+            <div class="input-with-icon">
+              <span class="material-symbols-outlined input-icon">event</span>
+              <input id="taskDueDate" type="date" formControlName="dueDate" class="form-input" />
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="closeCreateTaskModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-submit-task" [disabled]="createTaskForm.invalid">
+            <span class="material-symbols-outlined fs-18">add_task</span>
+            <span>Assign Task to {{ activePackageMeta().name }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DOCUMENT VIEWER MODAL (IFRAME PREVIEW) -->
+  <div class="modal-backdrop" *ngIf="isDocViewerOpen()">
+    <div class="modal-box doc-viewer-box">
+      <div class="modal-header">
+        <h2>
+          <span class="material-symbols-outlined">description</span>
+          {{ activeDocName() }}
+        </h2>
+        <button class="close-btn" (click)="closeDocViewer()">&times;</button>
+      </div>
+      <div class="modal-body doc-viewer-body p-0">
+        <iframe
+          *ngIf="activeIframeUrl()"
+          [src]="activeIframeUrl()"
+          class="doc-iframe"
+          title="Document Content Preview">
+        </iframe>
+        <iframe
+          *ngIf="!activeIframeUrl()"
+          [srcdoc]="activeIframeSrcdoc()"
+          class="doc-iframe"
+          title="Document Content Preview">
+        </iframe>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" (click)="closeDocViewer()">Close Document</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPREHENSIVE TASK DETAIL & VERSION HISTORY DRAWER MODAL -->
+  <div class="modal-backdrop" *ngIf="isTaskDetailModalOpen() && selectedTask() as t" (click)="closeTaskDetailModal()">
+    <div class="modal-box task-detail-modal-box" (click)="$event.stopPropagation()">
+      <!-- Modal Header -->
+      <div class="modal-header flex-column align-items-start gap-2">
+        <div class="d-flex justify-content-between align-items-center w-100">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge badge-purple font-bold">{{ t.packageName || activePackageMeta().name }}</span>
+            <span class="badge" [ngClass]="getStatusBadgeClass(t.status)">{{ t.status }}</span>
+            <span class="badge" [ngClass]="{
+              'badge-danger': t.priority === 'HIGH' || t.priority === 'URGENT',
+              'badge-amber': t.priority === 'MEDIUM',
+              'badge-blue': t.priority === 'LOW'
+            }">{{ t.priority }}</span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button
+              type="button"
+              class="btn btn-xs btn-outline-danger"
+              (click)="deleteTask($event, t)"
+              *ngIf="canDeleteTask()"
+              title="Delete Task">
+              <span class="material-symbols-outlined fs-14">delete</span>
+              Delete Task
+            </button>
+            <button class="close-btn" (click)="closeTaskDetailModal()">&times;</button>
+          </div>
+        </div>
+
+        <h2 class="task-detail-title m-0">{{ t.title }}</h2>
+
+        <!-- Quick Operation Bar -->
+        <div class="task-action-bar w-100">
+          <!-- Creator / Manager Actions -->
+          <div class="d-flex align-items-center gap-2" *ngIf="canReviewOrApprove()">
+            <button
+              type="button"
+              class="btn btn-sm btn-success"
+              (click)="approveTask(t)"
+              *ngIf="t.status === 'SUBMITTED' || t.status === 'RESUBMITTED' || t.status === 'UNDER_REVIEW' || t.status === 'IN_PROGRESS'">
+              <span class="material-symbols-outlined fs-16">check_circle</span>
+              Approve Design
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-warning"
+              (click)="openRevisionModal(t)"
+              *ngIf="t.status === 'SUBMITTED' || t.status === 'RESUBMITTED' || t.status === 'UNDER_REVIEW' || t.status === 'IN_PROGRESS'">
+              <span class="material-symbols-outlined fs-16">rate_review</span>
+              Send Change Request
+            </button>
+          </div>
+
+          <!-- Designer Actions -->
+          <div class="d-flex align-items-center gap-2" *ngIf="currentRole() === 'DESIGNER'">
+            <button
+              type="button"
+              class="btn btn-sm btn-blue"
+              (click)="acceptTask(t)"
+              *ngIf="t.status === 'ASSIGNED'">
+              Accept Task
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-amber"
+              (click)="startWork(t)"
+              *ngIf="t.status === 'ACCEPTED'">
+              Start Canvas Work
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-primary"
+              (click)="openUploadModal(t)"
+              *ngIf="t.status === 'ACCEPTED' || t.status === 'IN_PROGRESS' || t.status === 'REVISION_REQUIRED'">
+              <span class="material-symbols-outlined fs-16">upload_file</span>
+              Upload New Version
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detail Navigation Tabs -->
+      <div class="task-detail-tabs">
+        <button
+          class="detail-tab-btn"
+          [class.active]="activeDetailTab() === 'BRIEF'"
+          (click)="activeDetailTab.set('BRIEF')">
+          <span class="material-symbols-outlined fs-16">description</span>
+          Brief & Spec Document
+        </button>
+        <button
+          class="detail-tab-btn"
+          [class.active]="activeDetailTab() === 'VERSIONS'"
+          (click)="activeDetailTab.set('VERSIONS')">
+          <span class="material-symbols-outlined fs-16">collections</span>
+          Versions History ({{ t.versions?.length || 0 }})
+        </button>
+        <button
+          class="detail-tab-btn"
+          [class.active]="activeDetailTab() === 'TIMELINE'"
+          (click)="activeDetailTab.set('TIMELINE')">
+          <span class="material-symbols-outlined fs-16">history</span>
+          Status Flow Timeline ({{ t.statusHistory?.length || 0 }})
+        </button>
+        <button
+          class="detail-tab-btn"
+          [class.active]="activeDetailTab() === 'COMMENTS'"
+          (click)="activeDetailTab.set('COMMENTS')">
+          <span class="material-symbols-outlined fs-16">forum</span>
+          Comments & Change Requests ({{ t.comments?.length || 0 }})
+        </button>
+      </div>
+
+      <!-- Modal Body Tab Views -->
+      <div class="modal-body p-4">
+        <!-- TAB 1: BRIEF & SPEC DOCUMENT PREVIEW -->
+        <div *ngIf="activeDetailTab() === 'BRIEF'">
+          <div class="brief-meta-grid mb-3">
+            <div>
+              <span class="text-subtle fs-12">Assigned Designer:</span>
+              <div class="font-bold text-dark d-inline-flex align-items-center gap-1">
+                <span class="material-symbols-outlined fs-16 text-muted">palette</span>
+                {{ t.assigneeName || 'Assigned Designer' }}
+              </div>
+            </div>
+            <div>
+              <span class="text-subtle fs-12">Created By:</span>
+              <div class="font-bold text-dark d-inline-flex align-items-center gap-1">
+                <span class="material-symbols-outlined fs-16 text-muted">person</span>
+                {{ t.creatorName || 'System Administrator' }}
+              </div>
+            </div>
+            <div>
+              <span class="text-subtle fs-12">Target Due Date:</span>
+              <div class="font-bold text-dark d-inline-flex align-items-center gap-1">
+                <span class="material-symbols-outlined fs-16 text-muted">event</span>
+                {{ t.dueDate || 'Standard' }}
+              </div>
+            </div>
+          </div>
+
+          <div class="brief-section mb-3" *ngIf="t.description">
+            <h4 class="fs-14 font-bold text-dark mb-1">Description & Requirements</h4>
+            <p class="text-subtle fs-14 bg-light p-3 rounded-8 border">{{ t.description }}</p>
+          </div>
+
+          <!-- Embedded Iframe Document Preview -->
+          <div class="iframe-preview-container">
+            <div class="iframe-header">
+              <span class="material-symbols-outlined fs-16">description</span>
+              <span class="font-bold fs-13">Brief Document Content (Iframe Preview)</span>
+              <span class="text-subtle fs-12 ml-auto" *ngIf="t.attachmentName">{{ t.attachmentName }}</span>
+            </div>
+            <iframe
+              *ngIf="t.attachmentUrl && (t.attachmentUrl.startsWith('data:') || t.attachmentUrl.startsWith('http'))"
+              [src]="sanitizer.bypassSecurityTrustResourceUrl(t.attachmentUrl)"
+              class="brief-iframe"
+              title="Brief Document Preview">
+            </iframe>
+            <iframe
+              *ngIf="!t.attachmentUrl || (!t.attachmentUrl.startsWith('data:') && !t.attachmentUrl.startsWith('http'))"
+              [srcdoc]="activeIframeSrcdoc()"
+              class="brief-iframe"
+              title="Brief Document Text Preview">
+            </iframe>
+          </div>
+        </div>
+
+        <!-- TAB 2: VERSIONS HISTORY (v1.0, v2.0...) -->
+        <div *ngIf="activeDetailTab() === 'VERSIONS'">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h4 class="fs-15 font-bold m-0">Submitted Design Asset Versions</h4>
+            <button
+              class="btn btn-sm btn-primary"
+              (click)="openUploadModal(t)"
+              *ngIf="currentRole() === 'DESIGNER' && (t.status === 'ACCEPTED' || t.status === 'IN_PROGRESS' || t.status === 'REVISION_REQUIRED')">
+              + Upload Version v{{ (t.versions?.length || 0) + 1 }}.0
+            </button>
+          </div>
+
+          <div class="version-list" *ngIf="t.versions && t.versions.length > 0">
+            <div class="version-card mb-3 p-3 border rounded-12 bg-white shadow-sm" *ngFor="let ver of t.versions">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge badge-blue font-bold fs-13">Version v{{ ver.versionNumber }}.0</span>
+                  <span class="font-bold text-dark fs-14">{{ ver.fileName }}</span>
+                </div>
+                <span class="text-subtle fs-12">{{ ver.createdAt | date:'medium' }}</span>
+              </div>
+              <p class="text-subtle fs-13 mb-2" *ngIf="ver.changelog">
+                <strong>Changelog:</strong> {{ ver.changelog }}
+              </p>
+              <div class="d-flex align-items-center justify-content-between">
+                <span class="text-subtle fs-12">Submitted by {{ ver.submittedByName || 'Designer' }}</span>
+                <button
+                  class="btn btn-xs btn-outline-primary"
+                  (click)="openDocViewer($event, ver.filePath, ver.fileName, ver.fileContent)">
+                  <span class="material-symbols-outlined fs-14">visibility</span>
+                  Preview Version Asset (Iframe)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="empty-state py-4" *ngIf="!t.versions || t.versions.length === 0">
+            <span class="material-symbols-outlined empty-icon">collections</span>
+            <h4>No Creative Asset Versions Submitted Yet</h4>
+            <p>Designer will upload design versions (v1.0, v2.0...) after accepting task.</p>
+          </div>
+        </div>
+
+        <!-- TAB 3: WORKFLOW STATUS TIMELINE & AUDIT -->
+        <div *ngIf="activeDetailTab() === 'TIMELINE'">
+          <h4 class="fs-15 font-bold mb-3">Task Workflow Progression Timeline & Audit Stream</h4>
+          <div class="redesigned-audit-timeline" *ngIf="t.statusHistory && t.statusHistory.length > 0">
+            <div class="timeline-event-card" *ngFor="let h of t.statusHistory">
+              <div class="event-node-icon" [ngClass]="getHistoryNodeClass(h.newStatus)">
+                <span class="material-symbols-outlined">{{ getHistoryNodeIcon(h.newStatus) }}</span>
+              </div>
+              <div class="event-details">
+                <div class="event-top-row">
+                  <strong class="actor-title">{{ h.actorName || 'User' }}</strong>
+                  <span class="event-time">{{ h.createdAt | date:'short' }}</span>
+                </div>
+
+                <div class="event-transition-flow">
+                  <span class="status-from-chip" *ngIf="h.previousStatus">{{ h.previousStatus }}</span>
+                  <span class="material-symbols-outlined transition-arrow" *ngIf="h.previousStatus">arrow_forward</span>
+                  <span class="status-to-chip" [ngClass]="getHistoryNodeClass(h.newStatus)">{{ h.newStatus }}</span>
+                </div>
+
+                <div class="event-remark-box" *ngIf="h.remark">
+                  "{{ h.remark }}"
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="empty-state py-4" *ngIf="!t.statusHistory || t.statusHistory.length === 0">
+            <span class="material-symbols-outlined empty-icon">history</span>
+            <h4>No Status Transitions Recorded Yet</h4>
+            <p>Task status history will appear here as designer and manager progress the work.</p>
+          </div>
+        </div>
+
+        <!-- TAB 4: COMMENTS & CHANGE REQUESTS -->
+        <div *ngIf="activeDetailTab() === 'COMMENTS'">
+          <h4 class="fs-15 font-bold mb-3">Discussion Thread & Change Request Notes</h4>
+
+          <div class="comments-list mb-3" *ngIf="t.comments && t.comments.length > 0">
+            <div class="comment-bubble p-3 rounded-12 border mb-2" *ngFor="let c of t.comments" [ngClass]="{'bg-warning-subtle': c.comment.includes('[CHANGE REQUEST]')}">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="font-bold fs-13 text-dark d-inline-flex align-items-center gap-1">
+                  <span class="material-symbols-outlined fs-16 text-muted">chat</span>
+                  {{ c.userName }} ({{ c.userRole || 'User' }})
+                </span>
+                <span class="text-subtle fs-11">{{ c.createdAt | date:'short' }}</span>
+              </div>
+              <p class="fs-13 text-dark m-0">{{ c.comment }}</p>
+            </div>
+          </div>
+
+          <div class="empty-state py-3" *ngIf="!t.comments || t.comments.length === 0">
+            <p class="text-subtle fs-13">No comments posted yet. Add a note or change request below.</p>
+          </div>
+
+          <!-- Add Comment Input Box -->
+          <div class="add-comment-box mt-3">
+            <textarea
+              class="form-input mb-2"
+              rows="2"
+              placeholder="Type revision comment or feedback remark..."
+              [value]="newCommentText()"
+              (input)="newCommentText.set($any($event.target).value)"></textarea>
+            <button class="btn btn-sm btn-primary" (click)="onSubmitAddComment()" [disabled]="!newCommentText().trim()">
+              Post Comment / Note
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" (click)="closeTaskDetailModal()">Close Drawer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DESIGNER VERSION UPLOAD MODAL -->
+  <div class="modal-backdrop" *ngIf="isUploadModalOpen()" (click)="closeUploadModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <span class="material-symbols-outlined">upload_file</span>
+          Upload Creative Version Asset
+        </h2>
+        <button class="close-btn" (click)="closeUploadModal()">&times;</button>
+      </div>
+
+      <form [formGroup]="uploadForm" (ngSubmit)="onSubmitUpload()">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Select Design Asset File *</label>
+            <input type="file" (change)="onUploadFileSelected($event)" accept="image/*,video/*,.pdf,.doc,.docx,.zip,.txt" class="form-input" />
+          </div>
+
+          <div class="form-group">
+            <label>Version File Name *</label>
+            <input type="text" formControlName="fileName" class="form-input" placeholder="e.g. careermate_poster_v1.0.png" />
+          </div>
+
+          <div class="form-group">
+            <label>Version Changelog & Revision Notes *</label>
+            <textarea formControlName="changelog" rows="3" class="form-input" placeholder="Describe changes made, layout adjustments, typography fixes..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="closeUploadModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="uploadForm.invalid">Submit Version</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MANAGER REVISION / CHANGE REQUEST MODAL -->
+  <div class="modal-backdrop" *ngIf="isRevisionModalOpen()" (click)="closeRevisionModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <span class="material-symbols-outlined text-warning">rate_review</span>
+          Send Change Request to Designer
+        </h2>
+        <button class="close-btn" (click)="closeRevisionModal()">&times;</button>
+      </div>
+
+      <form [formGroup]="revisionForm" (ngSubmit)="onSubmitRevision()">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Change Request Details & Required Revisions *</label>
+            <textarea
+              formControlName="remark"
+              rows="4"
+              class="form-input"
+              placeholder="Explain required changes for the designer (e.g. increase logo size, change headline color to Navy Blue, adjust margins)..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="closeRevisionModal()">Cancel</button>
+          <button type="submit" class="btn btn-warning" [disabled]="revisionForm.invalid">
+            Submit Change Request
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+

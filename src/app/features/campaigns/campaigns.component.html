@@ -1,0 +1,102 @@
+<div class="campaigns-page">
+  <header class="page-header">
+    <div>
+      <h1>Campaign Planning & Targets</h1>
+      <p class="subtitle">Manage campaign budgets, lead goals, target CPL, and performance ratios</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="openModal()">
+        <span class="material-symbols-outlined">add_chart</span>
+        Create Campaign Plan
+      </button>
+    </div>
+  </header>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>Status Filter:</label>
+      <select [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event)">
+        <option value="ALL">All Statuses</option>
+        <option value="ACTIVE">Active</option>
+        <option value="PLANNING">Planning</option>
+        <option value="COMPLETED">Completed</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Campaigns Grid -->
+  <div class="campaigns-grid">
+    <div class="cmp-card" *ngFor="let cmp of filteredCampaigns">
+      <div class="cmp-header">
+        <span class="cmp-title">{{ cmp.name }}</span>
+        <span class="badge" [ngClass]="cmp.status === 'ACTIVE' ? 'badge-success' : 'badge-amber'">{{ cmp.status }}</span>
+      </div>
+      <div class="cmp-objective">Objective: {{ cmp.objective }}</div>
+
+      <div class="cmp-metrics-grid">
+        <div class="metric-item">
+          <span class="m-label">Budget</span>
+          <span class="m-value">₹{{ cmp.budget | number:'1.0-0' }}</span>
+        </div>
+        <div class="metric-item">
+          <span class="m-label">Target Leads</span>
+          <span class="m-value">{{ cmp.targetLeads }}</span>
+        </div>
+        <div class="metric-item">
+          <span class="m-label">Target CPL</span>
+          <span class="m-value">₹{{ cmp.targetCpl }}</span>
+        </div>
+        <div class="metric-item">
+          <span class="m-label">Current Spend</span>
+          <span class="m-value text-amber">₹{{ cmp.spend | number:'1.0-0' }}</span>
+        </div>
+        <div class="metric-item">
+          <span class="m-label">Actual Leads</span>
+          <span class="m-value text-blue">{{ cmp.leadsCount }}</span>
+        </div>
+        <div class="metric-item">
+          <span class="m-label">Revenue Generated</span>
+          <span class="m-value text-green">₹{{ cmp.revenue | number:'1.0-0' }}</span>
+        </div>
+      </div>
+
+      <div class="cmp-footer">
+        <span>Owner: {{ cmp.ownerName }}</span>
+        <span>Started: {{ cmp.startDate }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Modal -->
+  <div class="modal-backdrop" *ngIf="showModal()">
+    <div class="modal-card">
+      <h2>Create New Campaign Plan</h2>
+      <div class="form-group">
+        <label>Campaign Name</label>
+        <input type="text" [(ngModel)]="newCmpName" placeholder="e.g. Q4 Black Friday Growth Push" />
+      </div>
+      <div class="form-group">
+        <label>Objective</label>
+        <select [(ngModel)]="newCmpObjective">
+          <option value="LEAD_GENERATION">Lead Generation</option>
+          <option value="BRAND_AWARENESS">Brand Awareness</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Budget (₹)</label>
+          <input type="number" [(ngModel)]="newCmpBudget" />
+        </div>
+        <div class="form-group">
+          <label>Target Leads</label>
+          <input type="number" [(ngModel)]="newCmpTargetLeads" />
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="createCampaign()">Save Campaign</button>
+      </div>
+    </div>
+  </div>
+</div>
