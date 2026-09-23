@@ -10,19 +10,10 @@ import express from 'express';
 import { join } from 'node:path';
 import { createServer } from 'node:http';
 
-// Import the Node.js Express.js backend app & Socket.IO configuration
-// @ts-ignore
-import { app, setupSocketIO } from '../server/app.js';
-// @ts-ignore
-import { emitRealtimeEvent } from '../server/events.js';
-
+const app = express();
 const browserDistFolder = join(import.meta.dirname, '../browser');
 const angularApp = new AngularNodeAppEngine({ allowedHosts: ['*'] });
-
 const httpServer = createServer(app);
-setupSocketIO(httpServer);
-
-export { emitRealtimeEvent };
 
 /**
  * Serve static files from /browser
@@ -48,12 +39,12 @@ app.use((req: any, res: any, next: any) => {
 });
 
 /**
- * Start the server if this module is the main entry point or ran via PM2.
+ * Start the server if this module is the main entry point or run via PM2.
  */
 if (isMainModule(import.meta.url) || process.env['pm_id']) {
-  const port = process.env['PORT'] || 4000;
+  const port = process.env['PORT'] || 4200;
   httpServer.listen(port, () => {
-    console.log(`Node Express server listening on http://localhost:${port}`);
+    console.log(`Angular SSR frontend listening on http://localhost:${port}`);
   });
 }
 

@@ -1,61 +1,109 @@
-# ProjectName
+# MarkOps Workspace
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.7.
+A full-stack marketing operations management platform cleanly split into **frontend** and **backend** workspaces.
 
-## Development server
+---
 
-To start a local development server, run:
+## Directory Structure
 
-```bash
-ng serve
+```text
+.
+├── frontend/             # Angular 22 Frontend Application
+│   ├── src/              # Application source code (components, services, state)
+│   ├── public/           # Static assets (images, icons, uploads)
+│   ├── angular.json      # Angular workspace configuration
+│   ├── proxy.conf.json   # Local dev proxy config (/api, /uploads, /socket.io -> :4000)
+│   ├── package.json      # Frontend npm dependencies and scripts
+│   └── tsconfig.json     # TypeScript configuration
+│
+├── backend/              # Node.js + Express Backend Server
+│   ├── server/           # Express routes, controllers, services, middleware
+│   │   ├── app.js        # Express app configuration & middleware
+│   │   ├── index.js      # Server entry point & HTTP/Socket.IO listener
+│   │   └── db.js         # MySQL DB connection pool & fallback JSON store
+│   ├── prisma/           # Prisma schema, migrations, and SQL scripts
+│   ├── package.json      # Backend npm dependencies and scripts
+│   └── .env.example      # Backend environment configuration template
+│
+└── package.json          # Root workspace scripts runner
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+---
 
-## Code scaffolding
+## Getting Started
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### 1. Install Dependencies
 
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+You can install dependencies inside each folder:
 
 ```bash
-ng generate --help
+# In backend
+cd backend
+npm install
+
+# In frontend
+cd ../frontend
+npm install
 ```
 
-## Building
+---
 
-To build the project run:
+### 2. Environment Configuration
+
+Copy the sample environment file in `backend/`:
 
 ```bash
-ng build
+cd backend
+cp .env.example .env
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Update your `.env` with your database credentials if connecting to MySQL:
+```env
+DATABASE_URL="mysql://root:password@localhost:3306/markops"
+PORT=4000
+```
 
-## Running unit tests
+---
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+### 3. Running Locally
+
+#### Option A: Running from Root Directory
 
 ```bash
-ng test
+# Start backend server (port 4000)
+npm run dev:backend
+
+# Start frontend application (port 4200)
+npm run dev:frontend
 ```
 
-## Running end-to-end tests
+#### Option B: Running Individually
 
-For end-to-end (e2e) testing, run:
+**Backend (`http://localhost:4000`):**
+```bash
+cd backend
+npm run dev
+```
+
+**Frontend (`http://localhost:4200`):**
+```bash
+cd frontend
+npm run dev
+```
+
+---
+
+### 4. Database & Prisma Commands
 
 ```bash
-ng e2e
+cd backend
+
+# Push schema changes to database
+npm run db:push
+
+# Open Prisma Studio GUI
+npm run db:studio
+
+# Generate Prisma Client
+npm run db:generate
 ```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
-# markopsbackend
-# markopsbackend

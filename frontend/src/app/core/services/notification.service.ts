@@ -2,7 +2,7 @@ import { Injectable, signal, computed, inject, PLATFORM_ID } from '@angular/core
 import { isPlatformBrowser } from '@angular/common';
 import { io, Socket } from 'socket.io-client';
 import { AuthService } from './auth.service';
-import { safeFetch } from '../utils/api-url.utils';
+import { safeFetch, getBackendBaseUrl } from '../utils/api-url.utils';
 
 export interface NotificationItem {
   id: string;
@@ -36,7 +36,8 @@ export class NotificationService {
 
   private initRealtimeSocket(): void {
     try {
-      this.socket = io(window.location.origin, {
+      const backendUrl = getBackendBaseUrl();
+      this.socket = io(backendUrl, {
         transports: ['polling', 'websocket'],
         reconnectionAttempts: 5,
         timeout: 10000,

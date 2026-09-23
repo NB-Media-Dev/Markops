@@ -1,52 +1,20 @@
 {
-  "name": "project-name",
-  "version": "0.0.0",
-  "scripts": {
-    "ng": "ng",
-    "start": "ng serve --host 0.0.0.0 --allowed-hosts",
-    "dev": "ng serve --host 0.0.0.0 --allowed-hosts --open",
-    "build": "ng build",
-    "watch": "ng build --watch --configuration development",
-    "test": "ng test",
-    "db:push": "prisma db push",
-    "db:studio": "npx prisma studio",
-    "serve:ssr:project-name": "node dist/project-name/server/server.mjs",
-    "server": "node server/index.js",
-    "backend": "node server/index.js"
-  },
+  "name": "markops-monorepo",
+  "version": "1.0.0",
   "private": true,
-  "packageManager": "npm@11.16.0",
-  "dependencies": {
-    "@angular/common": "^22.1.0",
-    "@angular/compiler": "^22.1.0",
-    "@angular/core": "^22.1.0",
-    "@angular/forms": "^22.1.0",
-    "@angular/platform-browser": "^22.1.0",
-    "@angular/platform-server": "^22.1.0",
-    "@angular/router": "^22.1.0",
-    "@angular/ssr": "^22.1.7",
-    "@prisma/client": "^7.10.0",
-    "bcryptjs": "^3.0.3",
-    "cookie-parser": "^1.4.7",
-    "cors": "^2.8.6",
-    "dotenv": "^16.4.7",
-    "express": "^5.1.0",
-    "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.12.0",
-    "rxjs": "~7.8.0",
-    "socket.io": "^4.8.3",
-    "socket.io-client": "^4.8.3",
-    "tslib": "^2.3.0"
-  },
-  "devDependencies": {
-    "@angular/build": "^22.1.7",
-    "@angular/cli": "^22.1.7",
-    "@angular/compiler-cli": "^22.1.0",
-    "@types/express": "^5.0.1",
-    "@types/node": "^20.17.19",
-    "jsdom": "^28.0.0",
-    "prettier": "^3.8.1",
-    "typescript": "~6.0.2",
-    "vitest": "^4.0.8"
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm run dev:frontend",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "start:frontend": "npm --prefix frontend run start",
+    "start:backend": "npm --prefix backend run start",
+    "build:frontend": "npm --prefix frontend run build",
+    "test:frontend": "npm --prefix frontend run test",
+    "db:push": "npm --prefix backend run db:push",
+    "db:studio": "npm --prefix backend run db:studio"
   }
 }

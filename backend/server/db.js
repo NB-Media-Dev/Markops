@@ -42,7 +42,7 @@ async function initDatabase() {
 const fs = require('fs');
 const path = require('path');
 
-const TASKS_FILE_PATH = path.resolve(process.cwd(), 'server', 'data_tasks.json');
+const TASKS_FILE_PATH = path.resolve(__dirname, 'data_tasks.json');
 
 function loadTasksFromFile() {
   try {

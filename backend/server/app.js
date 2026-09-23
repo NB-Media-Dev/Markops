@@ -19,16 +19,29 @@ const path = require('path');
 
 const app = express();
 
-app.use(cors({ origin: '*', credentials: true }));
+const corsOriginHandler = (origin, callback) => {
+  callback(null, origin || true);
+};
+
+app.use(cors({
+  origin: corsOriginHandler,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id', 'x-role-code', 'x-requested-with']
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
 // Serve static uploaded files if they exist
-const uploadDir1 = path.resolve('public/uploads');
-const uploadDir2 = path.resolve('uploads');
+const uploadDir1 = path.resolve(__dirname, '../../frontend/public/uploads');
+const uploadDir2 = path.resolve(__dirname, '../uploads');
+const uploadDir3 = path.resolve('public/uploads');
+const uploadDir4 = path.resolve('uploads');
 app.use('/uploads', express.static(uploadDir1));
 app.use('/uploads', express.static(uploadDir2));
+app.use('/uploads', express.static(uploadDir3));
+app.use('/uploads', express.static(uploadDir4));
 
 // Fallback document viewer route for /uploads
 app.use('/uploads', (req, res) => {
