@@ -24,36 +24,6 @@ export class UserManagementService {
   };
 
   private readonly DEFAULT_TELECALLERS: ManagedUser[] = [
-    {
-      id: 'usr_telecaller_01',
-      email: 'ananya@markops.io',
-      fullName: 'Ananya Sharma',
-      role: 'TELECALLER',
-      department: 'Telecalling Operations',
-      isActive: true,
-      lastLoginAt: 'Active now',
-      createdAt: '2026-01-15',
-    },
-    {
-      id: 'usr_telecaller_02',
-      email: 'rohan@markops.io',
-      fullName: 'Rohan Verma',
-      role: 'TELECALLER',
-      department: 'Telecalling Operations',
-      isActive: true,
-      lastLoginAt: '2 hours ago',
-      createdAt: '2026-01-15',
-    },
-    {
-      id: 'usr_telecaller_03',
-      email: 'priya@markops.io',
-      fullName: 'Priya Gupta',
-      role: 'TELECALLER',
-      department: 'Telecalling Operations',
-      isActive: true,
-      lastLoginAt: 'Yesterday',
-      createdAt: '2026-01-16',
-    },
   ];
 
   private readonly INITIAL_SEED_USERS: ManagedUser[] = [this.PRIMARY_ADMIN, ...this.DEFAULT_TELECALLERS];

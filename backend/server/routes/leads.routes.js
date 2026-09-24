@@ -156,7 +156,7 @@ router.get('/followups', (req, res) => {
 router.post('/leads/batch-import', async (req, res) => {
   const { leads, selectedTelecallerIds, campaignId, campaignName, source, uploaderId, uploaderEmail, uploaderRole } = req.body;
   const effectiveRole = String(uploaderRole || req.headers['x-user-role'] || '').toUpperCase();
-  
+
   if (effectiveRole === 'TELECALLER') {
     return res.status(403).json({
       error: 'Access Denied: Telecallers are not authorized to upload lead files. Upload is strictly restricted to Digital Marketing role.',
@@ -216,10 +216,7 @@ router.post('/leads/batch-import', async (req, res) => {
   // Fallback default telecallers if no telecallers are present
   if (telecallers.length === 0) {
     telecallers = [
-      { id: 'usr_telecaller_01', fullName: 'Ananya Sharma', email: 'ananya@markops.io' },
-      { id: 'usr_telecaller_02', fullName: 'Rohan Verma', email: 'rohan@markops.io' },
-      { id: 'usr_telecaller_03', fullName: 'Priya Gupta', email: 'priya@markops.io' },
-    ];
+      ];
   }
 
   const createdLeads = [];
@@ -265,7 +262,7 @@ router.post('/leads/batch-import', async (req, res) => {
 
   // 3. Emit Realtime Events & Record Audit Log
   emitRealtimeEvent('leads:batch_imported', { total: createdLeads.length, allocationSummary });
-  
+
   await recordAuditLog(dbPool, {
     actorId: uploaderId || req.headers['x-user-id'] || 'usr_digital_01',
     actorEmail: uploaderEmail || 'digital@markops.io',

@@ -243,7 +243,6 @@ export class PackageWorksComponent implements OnInit {
         ];
       case 'DIGITAL_MARKETING':
         return [
-          { id: 'TASKS', label: 'Package Tasks', icon: 'draw' },
           { id: 'LEADS', label: 'Leads', icon: 'groups' },
           { id: 'TELECALLING', label: 'Telecalling Overview', icon: 'call' },
           { id: 'CAMPAIGNS', label: 'Campaigns', icon: 'campaign' },

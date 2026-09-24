@@ -24,18 +24,6 @@ export const DEMO_ACCOUNTS: Record<string, { email: string; pass: string; user: 
       isActive: true,
     },
   },
-  TELECALLER: {
-    email: 'ananya@markops.io',
-    pass: 'telecaller123',
-    user: {
-      id: 'usr_telecaller_01',
-      email: 'ananya@markops.io',
-      fullName: 'Ananya Sharma',
-      role: 'TELECALLER',
-      department: 'Telecalling Operations',
-      isActive: true,
-    },
-  },
 };
 
 @Injectable({

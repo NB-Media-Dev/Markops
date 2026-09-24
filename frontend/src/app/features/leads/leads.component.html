@@ -62,13 +62,6 @@
       <span class="material-symbols-outlined">view_list</span>
       {{ isTelecaller() ? 'My Assigned Leads' : 'All Leads' }} ({{ myLeadsList().length }})
     </button>
-    <button
-      class="tab-btn"
-      [class.active]="activeTab() === 'TELECALLING_MONITOR'"
-      (click)="activeTab.set('TELECALLING_MONITOR')">
-      <span class="material-symbols-outlined">monitoring</span>
-      Telecalling Dashboard
-    </button>
   </div>
 
   <!-- TAB 1: ALL LEADS LIST VIEW -->
