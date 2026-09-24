@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { NotificationService } from '../../core/services/notification.service';
+import { NotificationService, NotificationItem } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-notifications',
@@ -14,5 +14,9 @@ export class NotificationsComponent implements OnInit {
 
   ngOnInit() {
     this.notifService.loadNotifications();
+  }
+
+  onNotificationClick(item: NotificationItem): void {
+    this.notifService.handleNotificationClick(item);
   }
 }

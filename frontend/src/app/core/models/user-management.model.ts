@@ -58,4 +58,10 @@ export const SYSTEM_ROLES_METADATA: RoleMetadata[] = [
     badgeClass: 'role-telecaller',
     permissionsCount: 14,
   },
+  {
+    code: 'BDM',
+    label: 'Business Development Manager',
+    badgeClass: 'role-bdm',
+    permissionsCount: 8,
+  },
 ];

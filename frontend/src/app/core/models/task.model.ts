@@ -65,6 +65,7 @@ export interface Task {
   priority: TaskPriority;
   createdBy: string;
   creatorName?: string;
+  creatorRole?: string;
   assignedTo?: string;
   assigneeName?: string;
   dueDate?: string;
@@ -90,6 +91,8 @@ export interface CreateTaskRequest {
   dueDate?: string;
   creatorId?: string;
   creatorName?: string;
+  creatorRole?: string;
+  creatorEmail?: string;
   assigneeName?: string;
 }
 

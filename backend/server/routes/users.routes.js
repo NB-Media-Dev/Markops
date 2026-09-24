@@ -81,21 +81,20 @@ router.post('/users', async (req, res) => {
 
   if (dbPool) {
     try {
-      await dbPool.query(
-        `INSERT INTO users (id, email, password_hash, full_name, role_id, department, is_active)
-         VALUES (?, ?, ?, ?, ?, ?, ?)
+      const [insertRes] = await dbPool.query(
+        `INSERT INTO users (email, password_hash, full_name, role_id, department, is_active)
+         VALUES (?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), department = VALUES(department), is_active = VALUES(is_active)`,
-        [userId, normalizedEmail, hashedPassword, newUser.fullName, targetRoleId, userDept, userActive ? 1 : 0]
+        [normalizedEmail, hashedPassword, newUser.fullName, targetRoleId, userDept, userActive ? 1 : 0]
       );
-      console.log(`[MySQL DB] Successfully inserted user ${normalizedEmail} (${userId}) into table 'users'.`);
+      const insertedUserId = insertRes?.insertId || 1;
+      console.log(`[MySQL DB] Successfully inserted user ${normalizedEmail} (ID: ${insertedUserId}) into table 'users'.`);
 
-      const notifId = `notif_${Math.random().toString(36).substring(2, 11)}`;
       await dbPool.query(
-        `INSERT INTO notifications (id, user_id, title, message, type, is_read, created_at)
-         VALUES (?, ?, ?, ?, ?, 0, NOW())`,
+        `INSERT INTO notifications (user_id, title, message, type, is_read, created_at)
+         VALUES (?, ?, ?, ?, 0, NOW())`,
         [
-          notifId,
-          userId,
+          insertedUserId,
           'Welcome to MarkOps Platform',
           `Your ${newUser.role} user account has been successfully provisioned.`,
           'SUCCESS',
@@ -124,11 +123,11 @@ router.post('/users', async (req, res) => {
 router.delete('/users/:id', async (req, res) => {
   const userId = req.params.id;
 
-  if (userId === 'usr_admin_01') {
+  if (userId === 'usr_admin_01' || userId === '1') {
     return res.status(403).json({ error: 'System Administrator account (usr_admin_01) cannot be deleted.' });
   }
 
-  const index = dbUsersStore.findIndex((u) => u.id === userId);
+  const index = dbUsersStore.findIndex((u) => String(u.id) === String(userId));
   const deletedUser = index !== -1 ? dbUsersStore.splice(index, 1)[0] : { id: userId };
 
   if (dbPool) {
@@ -157,7 +156,7 @@ router.delete('/users/:id', async (req, res) => {
 // PATCH /api/users/:id/status - Toggle user active status
 router.patch('/users/:id/status', async (req, res) => {
   const userId = req.params.id;
-  const user = dbUsersStore.find((u) => u.id === userId);
+  const user = dbUsersStore.find((u) => String(u.id) === String(userId));
 
   let newActiveState = true;
   let previousActiveState = false;
@@ -203,7 +202,7 @@ router.put('/users/:id', async (req, res) => {
   const userId = req.params.id;
   const { email, fullName, role, department, isActive, password } = req.body;
 
-  const user = dbUsersStore.find((u) => u.id === userId);
+  const user = dbUsersStore.find((u) => String(u.id) === String(userId));
   const previousState = user ? { ...user } : null;
 
   if (user) {

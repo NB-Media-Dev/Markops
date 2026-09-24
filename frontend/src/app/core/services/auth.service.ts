@@ -9,6 +9,7 @@ export const ROLE_DEFAULT_ROUTES: Record<UserRole, string> = {
   DIGITAL_MARKETING: '/dashboard',
   DESIGNER: '/dashboard',
   TELECALLER: '/dashboard',
+  BDM: '/package-works',
 };
 
 export const DEMO_ACCOUNTS: Record<string, { email: string; pass: string; user: User }> = {
@@ -21,6 +22,18 @@ export const DEMO_ACCOUNTS: Record<string, { email: string; pass: string; user: 
       fullName: 'System Administrator',
       role: 'ADMINISTRATOR',
       department: 'Executive Operations',
+      isActive: true,
+    },
+  },
+  BDM: {
+    email: 'bdm@markops.io',
+    pass: 'admin123',
+    user: {
+      id: 'usr_bdm_01',
+      email: 'bdm@markops.io',
+      fullName: 'Business Development Manager',
+      role: 'BDM',
+      department: 'Business Development',
       isActive: true,
     },
   },

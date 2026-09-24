@@ -57,6 +57,8 @@ import { DesignerDashboardComponent } from '../designer/designer-dashboard.compo
 import { TelecallingComponent } from '../telecalling/telecalling.component';
 import { TargetsComponent } from '../targets/targets.component';
 import { LeadsComponent } from '../leads/leads.component';
+import { CampaignsComponent } from '../campaigns/campaigns.component';
+import { AdsComponent } from '../ads/ads.component';
 
 @Component({
   selector: 'app-package-works',
@@ -70,6 +72,8 @@ import { LeadsComponent } from '../leads/leads.component';
     TelecallingComponent,
     TargetsComponent,
     LeadsComponent,
+    CampaignsComponent,
+    AdsComponent,
   ],
   templateUrl: './package-works.component.html',
   styleUrl: './package-works.component.scss',
@@ -123,12 +127,12 @@ export class PackageWorksComponent implements OnInit {
 
   readonly canDeleteTask = computed<boolean>(() => {
     const role = this.currentRole();
-    return role === 'ADMINISTRATOR' || role === 'MARKETING_MANAGER' || role === 'DIGITAL_MARKETING';
+    return role === 'ADMINISTRATOR' || role === 'MARKETING_MANAGER' || role === 'BDM';
   });
 
   readonly canReviewOrApprove = computed<boolean>(() => {
     const role = this.currentRole();
-    return role === 'ADMINISTRATOR' || role === 'MARKETING_MANAGER' || role === 'DIGITAL_MARKETING';
+    return role === 'ADMINISTRATOR' || role === 'MARKETING_MANAGER' || role === 'BDM';
   });
 
   // Forms
@@ -183,7 +187,7 @@ export class PackageWorksComponent implements OnInit {
 
   readonly canCreateTask = computed<boolean>(() => {
     const role = this.currentRole();
-    return role === 'ADMINISTRATOR' || role === 'MARKETING_MANAGER' || role === 'DIGITAL_MARKETING';
+    return role === 'ADMINISTRATOR' || role === 'MARKETING_MANAGER' || role === 'BDM';
   });
 
   readonly realDesignersList = computed(() => {
@@ -223,8 +227,9 @@ export class PackageWorksComponent implements OnInit {
     switch (role) {
       case 'ADMINISTRATOR':
         return [
-          { id: 'TASKS', label: 'Tasks', icon: 'draw' },
-          { id: 'CAMPAIGNS', label: 'Campaigns & Ads', icon: 'campaign' },
+          { id: 'TASKS', label: 'Tasks (All & BDM)', icon: 'draw' },
+          { id: 'CAMPAIGNS', label: 'Campaigns', icon: 'campaign' },
+          { id: 'ADS', label: 'Ads Metrics', icon: 'ads_click' },
           { id: 'LEADS', label: 'Leads', icon: 'groups' },
           { id: 'TELECALLING', label: 'Telecalling Operations', icon: 'call' },
           { id: 'TARGETS', label: 'Targets', icon: 'track_changes' },
@@ -236,6 +241,7 @@ export class PackageWorksComponent implements OnInit {
         return [
           { id: 'TASKS', label: 'Tasks', icon: 'draw' },
           { id: 'CAMPAIGNS', label: 'Campaigns', icon: 'campaign' },
+          { id: 'ADS', label: 'Ads Metrics', icon: 'ads_click' },
           { id: 'TARGETS', label: 'Targets', icon: 'track_changes' },
           { id: 'LEADS', label: 'Leads', icon: 'groups' },
           { id: 'REPORTS', label: 'Reports', icon: 'analytics' },
@@ -243,10 +249,10 @@ export class PackageWorksComponent implements OnInit {
         ];
       case 'DIGITAL_MARKETING':
         return [
+          { id: 'CAMPAIGNS', label: 'Campaigns', icon: 'campaign' },
+          { id: 'ADS', label: 'Ads Metrics', icon: 'ads_click' },
           { id: 'LEADS', label: 'Leads', icon: 'groups' },
           { id: 'TELECALLING', label: 'Telecalling Overview', icon: 'call' },
-          { id: 'CAMPAIGNS', label: 'Campaigns', icon: 'campaign' },
-          { id: 'TRANSACTIONS', label: 'Ad Metrics', icon: 'payments' },
         ];
       case 'DESIGNER':
         return [
@@ -258,10 +264,15 @@ export class PackageWorksComponent implements OnInit {
           { id: 'TELECALLING', label: 'Calls Log', icon: 'call' },
           { id: 'TARGETS', label: 'My Target Progress', icon: 'track_changes' },
         ];
+      case 'BDM':
+        return [
+          { id: 'TASKS', label: 'Package Tasks (Designer Collaboration)', icon: 'draw' },
+        ];
       default:
         return [
           { id: 'TASKS', label: 'Tasks', icon: 'draw' },
           { id: 'CAMPAIGNS', label: 'Campaigns', icon: 'campaign' },
+          { id: 'ADS', label: 'Ads Metrics', icon: 'ads_click' },
           { id: 'LEADS', label: 'Leads', icon: 'groups' },
           { id: 'TELECALLING', label: 'Telecalling', icon: 'call' },
         ];
@@ -283,7 +294,7 @@ export class PackageWorksComponent implements OnInit {
     const currentUserEmail = (currentUser?.email || '').toLowerCase().trim();
 
     return allTasks.filter((t) => {
-      // 1. Designer filtering
+      // 1. Designer & BDM filtering
       if (currentRole === 'DESIGNER') {
         const isAssignedToMe =
           (t.assignedTo && t.assignedTo === currentUserId) ||
@@ -611,10 +622,10 @@ export class PackageWorksComponent implements OnInit {
     const payload = {
       ...formVal,
       packageName: activePkg,
-      creatorId: currentUser?.id || 'usr_admin_01',
-      creatorName: currentUser?.fullName || 'System Administrator',
-      creatorRole: currentUser?.role || 'ADMINISTRATOR',
-      creatorEmail: currentUser?.email || 'admin@markops.io',
+      creatorId: currentUser?.id || 'usr_bdm_01',
+      creatorName: currentUser?.fullName || 'Business Development Manager',
+      creatorRole: currentUser?.role || 'BDM',
+      creatorEmail: currentUser?.email || 'bdm@markops.io',
       assigneeName: selectedDesigner ? selectedDesigner.name : 'Assigned Designer',
       attachmentName: fileName || (this.createdBriefFile() ? this.createdBriefFile()!.name : ''),
       attachmentUrl: dataUrl || (fileName ? `/uploads/briefs/${fileName}` : ''),
@@ -648,7 +659,7 @@ export class PackageWorksComponent implements OnInit {
       event.stopPropagation();
     }
     if (!this.canDeleteTask()) {
-      alert('Permission Denied: Only Administrators, Marketing Managers, and Digital Marketers can delete tasks.');
+      alert('Permission Denied: Only Administrators, Marketing Managers, and BDM can delete tasks.');
       return;
     }
     if (confirm(`Are you sure you want to delete task "${task.title}"? This action is permanent and cannot be undone.`)) {

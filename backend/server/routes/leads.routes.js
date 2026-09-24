@@ -1,8 +1,17 @@
 const express = require('express');
-const { dbPool, dbLeadsStore, dbUsersStore, dbCallActivitiesStore, dbFollowUpsStore } = require('../db');
+const {
+  dbPool,
+  dbLeadsStore,
+  dbUsersStore,
+  dbCallActivitiesStore,
+  dbFollowUpsStore,
+  dbCommonTargetStore,
+  dbTelecallerTargetsStore,
+} = require('../db');
 const { recordAuditLog } = require('../services/audit.service');
 const { emitRealtimeEvent } = require('../events');
 const router = express.Router();
+
 router.get('/leads', (req, res) => {
   return res.json(dbLeadsStore);
 });
@@ -10,8 +19,8 @@ router.post('/leads', async (req, res) => {
   const { firstName, lastName, email, phone, source, campaignId, campaignName, creatorId, creatorEmail, creatorRole } = req.body;
   const effectiveRole = String(creatorRole || req.headers['x-user-role'] || '').toUpperCase();
 
-  if (effectiveRole === 'TELECALLER') {
-    return res.status(403).json({ error: 'Access Denied: Telecallers are not authorized to create leads.' });
+  if (effectiveRole === 'TELECALLER' || effectiveRole === 'BDM') {
+    return res.status(403).json({ error: 'Access Denied: Role is not authorized to create leads.' });
   }
 
   const fName = String(firstName || '').trim();
@@ -350,4 +359,37 @@ router.get('/leads/telecalling-summary', (req, res) => {
   });
 });
 
+// GET /api/telecaller-targets/common
+router.get('/telecaller-targets/common', (req, res) => {
+  return res.json(dbCommonTargetStore);
+});
+
+// POST /api/telecaller-targets/common
+router.post('/telecaller-targets/common', (req, res) => {
+  const { dailyCallsTarget, dailyInterestedTarget, dailyDurationTargetSeconds, updatedBy } = req.body;
+  if (dailyCallsTarget !== undefined) {
+    dbCommonTargetStore.dailyCallsTarget = Number(dailyCallsTarget) || 30;
+  }
+  if (dailyInterestedTarget !== undefined) {
+    dbCommonTargetStore.dailyInterestedTarget = Number(dailyInterestedTarget) || 5;
+  }
+  if (dailyDurationTargetSeconds !== undefined) {
+    dbCommonTargetStore.dailyDurationTargetSeconds = Number(dailyDurationTargetSeconds) || 3600;
+  }
+  dbCommonTargetStore.updatedBy = updatedBy || 'Marketing Manager';
+  dbCommonTargetStore.updatedAt = new Date().toISOString();
+
+  emitRealtimeEvent('telecaller_target:updated', dbCommonTargetStore);
+  return res.json(dbCommonTargetStore);
+});
+
+// GET /api/telecaller-targets
+router.get('/telecaller-targets', (req, res) => {
+  return res.json({
+    common: dbCommonTargetStore,
+    targets: dbTelecallerTargetsStore,
+  });
+});
+
 module.exports = router;
+

@@ -1,5 +1,5 @@
 /**
- * Helper to determine the Backend API Base URL across environments (SSR, Dev, Cloud).
+ * Helper to determine the Backend API Base URL across environments (SSR, Dev, Network LAN, Cloud).
  */
 export function getBackendBaseUrl(): string {
   if (typeof window !== 'undefined' && window.location) {
@@ -15,12 +15,14 @@ export function getBackendBaseUrl(): string {
       // Ignore localStorage access errors
     }
 
-    // 3. If running on standard Angular dev server (:4200), default to local Express backend (:4000)
+    // 3. In dev mode on port 4200, Socket.IO / Direct backend connects to port 4000 of the same host machine IP
+    const protocol = window.location.protocol || 'http:';
+    const hostname = window.location.hostname || 'localhost';
     if (window.location.port === '4200') {
-      return 'http://localhost:4000';
+      return `${protocol}//${hostname}:4000`;
     }
 
-    // 4. In production (same-domain or configured proxy), use window.location.origin
+    // 4. In production or proxied deployment, use window.location.origin
     return window.location.origin;
   }
 
@@ -40,13 +42,14 @@ export function getApiUrl(url: string): string {
   }
 
   const cleanPath = url.startsWith('/') ? url : `/${url}`;
-  const baseUrl = getBackendBaseUrl();
 
-  // In browser, if base is same origin, relative path works directly
-  if (typeof window !== 'undefined' && window.location && baseUrl === window.location.origin) {
+  // In browser, relative URLs (/api/...) are automatically routed through the Angular proxy
+  // or served by same-origin reverse proxy, guaranteeing network link clients reach the backend host.
+  if (typeof window !== 'undefined' && window.location) {
     return cleanPath;
   }
 
+  const baseUrl = getBackendBaseUrl();
   return `${baseUrl}${cleanPath}`;
 }
 

@@ -58,14 +58,14 @@ export class DashboardComponent implements OnInit {
   readonly designerAssignedTasks = computed(() => {
     const tasks = this.taskService.tasks();
     const user = this.authService.currentUser();
-    const userId = user?.id || '';
-    const userName = (user?.fullName || '').toLowerCase().trim();
-    const userEmail = (user?.email || '').toLowerCase().trim();
+    const userId = String(user?.id || '');
+    const userName = String(user?.fullName || '').toLowerCase().trim();
+    const userEmail = String(user?.email || '').toLowerCase().trim();
 
     return tasks.filter((t) =>
-      (t.assignedTo && t.assignedTo === userId) ||
-      (t.assignedTo && userEmail && t.assignedTo.toLowerCase() === userEmail) ||
-      (t.assigneeName && userName && t.assigneeName.toLowerCase().includes(userName))
+      (t.assignedTo && String(t.assignedTo) === userId) ||
+      (t.assignedTo && userEmail && String(t.assignedTo).toLowerCase() === userEmail) ||
+      (t.assigneeName && userName && String(t.assigneeName).toLowerCase().includes(userName))
     );
   });
 
@@ -85,12 +85,12 @@ export class DashboardComponent implements OnInit {
   readonly telecallerAssignedLeads = computed(() => {
     const leads = this.leadService.leads();
     const user = this.authService.currentUser();
-    const userId = user?.id || '';
-    const userName = (user?.fullName || '').toLowerCase().trim();
+    const userId = String(user?.id || '');
+    const userName = String(user?.fullName || '').toLowerCase().trim();
 
     return leads.filter((l) =>
-      (l.assignedTo && l.assignedTo === userId) ||
-      (l.assigneeName && userName && l.assigneeName.toLowerCase().includes(userName))
+      (l.assignedTo && String(l.assignedTo) === userId) ||
+      (l.assigneeName && userName && String(l.assigneeName).toLowerCase().includes(userName))
     );
   });
 
@@ -103,6 +103,44 @@ export class DashboardComponent implements OnInit {
   );
 
   readonly totalCallsLoggedCount = computed(() => this.leadService.calls().length);
+
+  // BDM Metrics
+  readonly bdmCreatedTasks = computed(() => {
+    const tasks = this.taskService.tasks();
+    const user = this.authService.currentUser();
+    const userId = String(user?.id || '');
+    const userEmail = String(user?.email || '').toLowerCase().trim();
+    const userName = String(user?.fullName || '').toLowerCase().trim();
+
+    return tasks.filter((t) =>
+      t.creatorRole === 'BDM' ||
+      (t.createdBy && String(t.createdBy) === userId) ||
+      (userEmail && t.createdBy && String(t.createdBy).toLowerCase() === userEmail) ||
+      (userName && t.creatorName && String(t.creatorName).toLowerCase().includes(userName))
+    );
+  });
+
+  readonly bdmInProgressCount = computed(() =>
+    this.bdmCreatedTasks().filter((t) => t.status === 'IN_PROGRESS' || t.status === 'ACCEPTED' || t.status === 'SUBMITTED' || t.status === 'RESUBMITTED' || t.status === 'UNDER_REVIEW').length
+  );
+
+  readonly bdmApprovedCount = computed(() =>
+    this.bdmCreatedTasks().filter((t) => t.status === 'APPROVED' || t.status === 'PUBLISHED' || t.status === 'COMPLETED').length
+  );
+
+  readonly bdmRevisionCount = computed(() =>
+    this.bdmCreatedTasks().filter((t) => t.status === 'REVISION_REQUIRED').length
+  );
+
+  // BDM-to-Designer Flow Monitor (for Admin & Digital Manager)
+  readonly bdmDesignerFlowTasks = computed(() => {
+    const tasks = this.taskService.tasks();
+    return tasks.filter((t) =>
+      t.creatorRole === 'BDM' ||
+      (t.createdBy && String(t.createdBy).toLowerCase().includes('bdm')) ||
+      (t.creatorName && String(t.creatorName).toLowerCase().includes('bdm'))
+    );
+  });
 
   readonly recentCampaigns = computed(() =>
     this.campaignService.campaigns().map((cmp) => ({

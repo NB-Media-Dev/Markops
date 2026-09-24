@@ -3,7 +3,8 @@ export type UserRole =
   | 'MARKETING_MANAGER'
   | 'DIGITAL_MARKETING'
   | 'DESIGNER'
-  | 'TELECALLER';
+  | 'TELECALLER'
+  | 'BDM';
 
 export interface UserPermission {
   id: string;

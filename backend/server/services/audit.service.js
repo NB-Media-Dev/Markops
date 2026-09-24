@@ -25,15 +25,15 @@ async function recordAuditLog(dbPool, params) {
 
   if (dbPool) {
     try {
+      const numericActorId = typeof params.actorId === 'number' ? params.actorId : (parseInt(params.actorId, 10) || null);
       await dbPool.query(
-        `INSERT INTO audit_logs (id, actor_id, action, entity_type, entity_id, previous_state, new_state, ip_address, user_agent, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        `INSERT INTO audit_logs (actor_id, action, entity_type, entity_id, previous_state, new_state, ip_address, user_agent, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
         [
-          logId,
-          params.actorId || null,
+          numericActorId,
           params.action,
           params.entityType,
-          params.entityId,
+          String(params.entityId || ''),
           params.previousState ? JSON.stringify(params.previousState) : null,
           params.newState ? JSON.stringify(params.newState) : null,
           params.ipAddress || '127.0.0.1',

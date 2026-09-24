@@ -33,9 +33,10 @@ export const routes: Routes = [
       },
       {
         path: 'tasks',
+        canActivate: [roleGuard],
+        data: { title: 'Tasks', icon: 'tasks', roles: ['ADMINISTRATOR', 'MARKETING_MANAGER', 'BDM'] },
         loadComponent: () =>
           import('./features/designer/designer-dashboard.component').then((m) => m.DesignerDashboardComponent),
-        data: { title: 'Tasks', icon: 'tasks' },
       },
       {
         path: 'designers',

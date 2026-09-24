@@ -118,7 +118,7 @@ enum NotificationType {
 // ----------------------------------------------------------------------------
 
 model Role {
-  id          String           @id @default(uuid()) @db.VarChar(36)
+  id          Int              @id @default(autoincrement())
   name        String           @db.VarChar(50)
   code        String           @unique @db.VarChar(50)
   description String?          @db.VarChar(255)
@@ -131,7 +131,7 @@ model Role {
 }
 
 model Permission {
-  id          String           @id @default(uuid()) @db.VarChar(36)
+  id          Int              @id @default(autoincrement())
   name        String           @db.VarChar(100)
   code        String           @unique @db.VarChar(100)
   module      String           @db.VarChar(50)
@@ -143,8 +143,8 @@ model Permission {
 }
 
 model RolePermission {
-  roleId       String     @map("role_id") @db.VarChar(36)
-  permissionId String     @map("permission_id") @db.VarChar(36)
+  roleId       Int        @map("role_id")
+  permissionId Int        @map("permission_id")
   createdAt    DateTime   @default(now()) @map("created_at")
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
   role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
@@ -154,10 +154,10 @@ model RolePermission {
 }
 
 model Team {
-  id          String   @id @default(uuid()) @db.VarChar(36)
+  id          Int      @id @default(autoincrement())
   name        String   @db.VarChar(100)
   description String?  @db.VarChar(255)
-  managerId   String?  @map("manager_id") @db.VarChar(36)
+  managerId   Int?     @map("manager_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
   users       User[]
@@ -166,29 +166,29 @@ model Team {
 }
 
 model User {
-  id              String            @id @default(uuid()) @db.VarChar(36)
-  email           String            @unique @db.VarChar(191)
-  passwordHash    String            @map("password_hash") @db.VarChar(255)
-  fullName        String            @map("full_name") @db.VarChar(100)
-  roleId          String            @map("role_id") @db.VarChar(36)
-  teamId          String?           @map("team_id") @db.VarChar(36)
-  department      String?           @db.VarChar(100)
-  isActive        Boolean           @default(true) @map("is_active")
-  lastLoginAt     DateTime?         @map("last_login_at")
-  createdAt       DateTime          @default(now()) @map("created_at")
-  updatedAt       DateTime          @updatedAt @map("updated_at")
-  auditLogs       AuditLog[]
-  callActivities  CallActivity[]
-  conversions     Conversion[]
-  createdCampaigns Campaign[]       @relation("CampaignOwner")
-  followUps       FollowUp[]
-  assignedLeads   Lead[]            @relation("LeadAssignee")
-  notifications   Notification[]
-  assignedTasks   Task[]            @relation("TaskAssignee")
-  createdTasks    Task[]            @relation("TaskCreator")
-  transactions    Transaction[]
-  role            Role              @relation(fields: [roleId], references: [id])
-  team            Team?             @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  id               Int            @id @default(autoincrement())
+  email            String         @unique @db.VarChar(191)
+  passwordHash     String         @map("password_hash") @db.VarChar(255)
+  fullName         String         @map("full_name") @db.VarChar(100)
+  roleId           Int            @map("role_id")
+  teamId           Int?           @map("team_id")
+  department       String?        @db.VarChar(100)
+  isActive         Boolean        @default(true) @map("is_active")
+  lastLoginAt      DateTime?      @map("last_login_at")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+  auditLogs        AuditLog[]
+  callActivities   CallActivity[]
+  conversions      Conversion[]
+  createdCampaigns Campaign[]     @relation("CampaignOwner")
+  followUps        FollowUp[]
+  assignedLeads    Lead[]         @relation("LeadAssignee")
+  notifications    Notification[]
+  assignedTasks    Task[]         @relation("TaskAssignee")
+  createdTasks     Task[]         @relation("TaskCreator")
+  transactions     Transaction[]
+  role             Role           @relation(fields: [roleId], references: [id])
+  team             Team?          @relation(fields: [teamId], references: [id], onDelete: SetNull)
 
   @@index([roleId])
   @@index([teamId])
@@ -196,7 +196,7 @@ model User {
 }
 
 model Campaign {
-  id                  String         @id @default(uuid()) @db.VarChar(36)
+  id                  Int            @id @default(autoincrement())
   name                String         @db.VarChar(150)
   objective           String         @db.VarChar(100)
   status              CampaignStatus @default(PLANNING)
@@ -207,7 +207,7 @@ model Campaign {
   targetCpl           Decimal        @default(0.00) @map("target_cpl") @db.Decimal(10, 2)
   targetQualifiedPct  Decimal        @default(0.00) @map("target_qualified_pct") @db.Decimal(5, 2)
   targetConversionPct Decimal        @default(0.00) @map("target_conversion_pct") @db.Decimal(5, 2)
-  ownerId             String         @map("owner_id") @db.VarChar(36)
+  ownerId             Int            @map("owner_id")
   createdAt           DateTime       @default(now()) @map("created_at")
   updatedAt           DateTime       @updatedAt @map("updated_at")
   ads                 Ad[]
@@ -222,7 +222,7 @@ model Campaign {
 }
 
 model MetaConnection {
-  id                   String               @id @default(uuid()) @db.VarChar(36)
+  id                   Int                  @id @default(autoincrement())
   accountName          String               @map("account_name") @db.VarChar(100)
   adAccountId          String               @unique @map("ad_account_id") @db.VarChar(100)
   businessId           String?              @map("business_id") @db.VarChar(100)
@@ -239,8 +239,8 @@ model MetaConnection {
 }
 
 model MetaSyncLog {
-  id               String         @id @default(uuid()) @db.VarChar(36)
-  metaConnectionId String         @map("meta_connection_id") @db.VarChar(36)
+  id               Int            @id @default(autoincrement())
+  metaConnectionId Int            @map("meta_connection_id")
   syncType         MetaSyncType   @default(SCHEDULED) @map("sync_type")
   status           MetaSyncStatus
   recordsProcessed Int            @default(0) @map("records_processed")
@@ -254,9 +254,9 @@ model MetaSyncLog {
 }
 
 model Ad {
-  id                 String          @id @default(uuid()) @db.VarChar(36)
-  campaignId         String          @map("campaign_id") @db.VarChar(36)
-  metaConnectionId   String?         @map("meta_connection_id") @db.VarChar(36)
+  id                 Int             @id @default(autoincrement())
+  campaignId         Int             @map("campaign_id")
+  metaConnectionId   Int?            @map("meta_connection_id")
   platformAdId       String?         @map("platform_ad_id") @db.VarChar(100)
   platformAdsetId    String?         @map("platform_adset_id") @db.VarChar(100)
   platformCampaignId String?         @map("platform_campaign_id") @db.VarChar(100)
@@ -275,8 +275,8 @@ model Ad {
 }
 
 model AdMetric {
-  id           String   @id @default(uuid()) @db.VarChar(36)
-  adId         String   @map("ad_id") @db.VarChar(36)
+  id           Int      @id @default(autoincrement())
+  adId         Int      @map("ad_id")
   spend        Decimal  @default(0.00) @db.Decimal(12, 2)
   impressions  BigInt   @default(0)
   reach        BigInt   @default(0)
@@ -295,20 +295,20 @@ model AdMetric {
 }
 
 model Task {
-  id              String               @id @default(uuid()) @db.VarChar(36)
-  campaignId      String?              @map("campaign_id") @db.VarChar(36)
-  title           String               @db.VarChar(150)
-  description     String?              @db.Text
-  status          TaskStatus           @default(DRAFT)
-  priority        TaskPriority         @default(MEDIUM)
-  createdBy       String               @map("created_by") @db.VarChar(36)
-  assignedTo      String?              @map("assigned_to") @db.VarChar(36)
-  dueDate         DateTime?            @map("due_date") @db.Date
-  createdAt       DateTime             @default(now()) @map("created_at")
-  updatedAt       DateTime             @updatedAt @map("updated_at")
-  assignee        User?                @relation("TaskAssignee", fields: [assignedTo], references: [id], onDelete: SetNull)
-  campaign        Campaign?            @relation(fields: [campaignId], references: [id], onDelete: SetNull)
-  creator         User                 @relation("TaskCreator", fields: [createdBy], references: [id])
+  id              Int                   @id @default(autoincrement())
+  campaignId      Int?                  @map("campaign_id")
+  title           String                @db.VarChar(150)
+  description     String?               @db.Text
+  status          TaskStatus            @default(DRAFT)
+  priority        TaskPriority          @default(MEDIUM)
+  createdBy       Int                   @map("created_by")
+  assignedTo      Int?                  @map("assigned_to")
+  dueDate         DateTime?             @map("due_date") @db.Date
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+  assignee        User?                 @relation("TaskAssignee", fields: [assignedTo], references: [id], onDelete: SetNull)
+  campaign        Campaign?             @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  creator         User                  @relation("TaskCreator", fields: [createdBy], references: [id])
   assignments     TaskAssignment[]
   attachments     TaskAttachment[]
   comments        TaskComment[]
@@ -323,22 +323,22 @@ model Task {
 }
 
 model TaskAssignment {
-  id          String    @id @default(uuid()) @db.VarChar(36)
-  taskId      String    @map("task_id") @db.VarChar(36)
-  assignedBy  String    @map("assigned_by") @db.VarChar(36)
-  assignedTo  String    @map("assigned_to") @db.VarChar(36)
-  assignedAt  DateTime  @default(now()) @map("assigned_at")
+  id           Int       @id @default(autoincrement())
+  taskId       Int       @map("task_id")
+  assignedBy   Int       @map("assigned_by")
+  assignedTo   Int       @map("assigned_to")
+  assignedAt   DateTime  @default(now()) @map("assigned_at")
   unassignedAt DateTime? @map("unassigned_at")
-  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  task         Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
   @@map("task_assignments")
 }
 
 model TaskStatusHistory {
-  id             String   @id @default(uuid()) @db.VarChar(36)
-  taskId         String   @map("task_id") @db.VarChar(36)
-  actorId        String   @map("actor_id") @db.VarChar(36)
+  id             Int      @id @default(autoincrement())
+  taskId         Int      @map("task_id")
+  actorId        Int      @map("actor_id")
   previousStatus String?  @map("previous_status") @db.VarChar(50)
   newStatus      String   @map("new_status") @db.VarChar(50)
   remark         String?  @db.Text
@@ -350,9 +350,9 @@ model TaskStatusHistory {
 }
 
 model TaskProgressHistory {
-  id              String   @id @default(uuid()) @db.VarChar(36)
-  taskId          String   @map("task_id") @db.VarChar(36)
-  actorId         String   @map("actor_id") @db.VarChar(36)
+  id              Int      @id @default(autoincrement())
+  taskId          Int      @map("task_id")
+  actorId         Int      @map("actor_id")
   progressPercent Int      @default(0) @map("progress_percent")
   notes           String?  @db.Text
   createdAt       DateTime @default(now()) @map("created_at")
@@ -363,10 +363,10 @@ model TaskProgressHistory {
 }
 
 model TaskVersion {
-  id            String   @id @default(uuid()) @db.VarChar(36)
-  taskId        String   @map("task_id") @db.VarChar(36)
+  id            Int      @id @default(autoincrement())
+  taskId        Int      @map("task_id")
   versionNumber Int      @default(1) @map("version_number")
-  submittedBy   String   @map("submitted_by") @db.VarChar(36)
+  submittedBy   Int      @map("submitted_by")
   fileName      String   @map("file_name") @db.VarChar(255)
   filePath      String   @map("file_path") @db.VarChar(500)
   storageKey    String   @map("storage_key") @db.VarChar(255)
@@ -381,9 +381,9 @@ model TaskVersion {
 }
 
 model TaskComment {
-  id        String   @id @default(uuid()) @db.VarChar(36)
-  taskId    String   @map("task_id") @db.VarChar(36)
-  userId    String   @map("user_id") @db.VarChar(36)
+  id        Int      @id @default(autoincrement())
+  taskId    Int      @map("task_id")
+  userId    Int      @map("user_id")
   comment   String   @db.Text
   createdAt DateTime @default(now()) @map("created_at")
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
@@ -393,12 +393,12 @@ model TaskComment {
 }
 
 model TaskAttachment {
-  id         String   @id @default(uuid()) @db.VarChar(36)
-  taskId     String   @map("task_id") @db.VarChar(36)
+  id         Int      @id @default(autoincrement())
+  taskId     Int      @map("task_id")
   fileName   String   @map("file_name") @db.VarChar(255)
   filePath   String   @map("file_path") @db.VarChar(500)
   fileSize   BigInt   @map("file_size")
-  uploadedBy String   @map("uploaded_by") @db.VarChar(36)
+  uploadedBy Int      @map("uploaded_by")
   createdAt  DateTime @default(now()) @map("created_at")
   task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
@@ -407,26 +407,26 @@ model TaskAttachment {
 }
 
 model Lead {
-  id             String            @id @default(uuid()) @db.VarChar(36)
-  firstName      String            @map("first_name") @db.VarChar(100)
-  lastName       String?           @map("last_name") @db.VarChar(100)
-  email          String?           @db.VarChar(191)
-  phone          String            @db.VarChar(30)
-  source         String            @default("META_ADS") @db.VarChar(100)
-  campaignId     String?           @map("campaign_id") @db.VarChar(36)
-  adId           String?           @map("ad_id") @db.VarChar(36)
-  status         LeadStatus        @default(NEW)
-  assignedTo     String?           @map("assigned_to") @db.VarChar(36)
-  createdAt      DateTime          @default(now()) @map("created_at")
-  updatedAt      DateTime          @updatedAt @map("updated_at")
+  id             Int                 @id @default(autoincrement())
+  firstName      String              @map("first_name") @db.VarChar(100)
+  lastName       String?             @map("last_name") @db.VarChar(100)
+  email          String?             @db.VarChar(191)
+  phone          String              @db.VarChar(30)
+  source         String              @default("META_ADS") @db.VarChar(100)
+  campaignId     Int?                @map("campaign_id")
+  adId           Int?                @map("ad_id")
+  status         LeadStatus          @default(NEW)
+  assignedTo     Int?                @map("assigned_to")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
   callActivities CallActivity[]
   conversion     Conversion?
   followUps      FollowUp[]
   assignments    LeadAssignment[]
   statusHistory  LeadStatusHistory[]
-  ad             Ad?               @relation(fields: [adId], references: [id], onDelete: SetNull)
-  assignee       User?             @relation("LeadAssignee", fields: [assignedTo], references: [id], onDelete: SetNull)
-  campaign       Campaign?         @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  ad             Ad?                 @relation(fields: [adId], references: [id], onDelete: SetNull)
+  assignee       User?               @relation("LeadAssignee", fields: [assignedTo], references: [id], onDelete: SetNull)
+  campaign       Campaign?           @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   transactions   Transaction[]
 
   @@index([phone])
@@ -438,10 +438,10 @@ model Lead {
 }
 
 model LeadAssignment {
-  id         String   @id @default(uuid()) @db.VarChar(36)
-  leadId     String   @map("lead_id") @db.VarChar(36)
-  assignedBy String   @map("assigned_by") @db.VarChar(36)
-  assignedTo String   @map("assigned_to") @db.VarChar(36)
+  id         Int      @id @default(autoincrement())
+  leadId     Int      @map("lead_id")
+  assignedBy Int      @map("assigned_by")
+  assignedTo Int      @map("assigned_to")
   assignedAt DateTime @default(now()) @map("assigned_at")
   lead       Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
@@ -450,9 +450,9 @@ model LeadAssignment {
 }
 
 model LeadStatusHistory {
-  id             String   @id @default(uuid()) @db.VarChar(36)
-  leadId         String   @map("lead_id") @db.VarChar(36)
-  actorId        String   @map("actor_id") @db.VarChar(36)
+  id             Int      @id @default(autoincrement())
+  leadId         Int      @map("lead_id")
+  actorId        Int      @map("actor_id")
   previousStatus String?  @map("previous_status") @db.VarChar(50)
   newStatus      String   @map("new_status") @db.VarChar(50)
   reason         String?  @db.Text
@@ -464,9 +464,9 @@ model LeadStatusHistory {
 }
 
 model CallActivity {
-  id              String      @id @default(uuid()) @db.VarChar(36)
-  leadId          String      @map("lead_id") @db.VarChar(36)
-  telecallerId    String      @map("telecaller_id") @db.VarChar(36)
+  id              Int         @id @default(autoincrement())
+  leadId          Int         @map("lead_id")
+  telecallerId    Int         @map("telecaller_id")
   outcome         CallOutcome
   durationSeconds Int         @default(0) @map("duration_seconds")
   remarks         String?     @db.Text
@@ -481,9 +481,9 @@ model CallActivity {
 }
 
 model FollowUp {
-  id           String         @id @default(uuid()) @db.VarChar(36)
-  leadId       String         @map("lead_id") @db.VarChar(36)
-  telecallerId String         @map("telecaller_id") @db.VarChar(36)
+  id           Int            @id @default(autoincrement())
+  leadId       Int            @map("lead_id")
+  telecallerId Int            @map("telecaller_id")
   dueDate      DateTime       @map("due_date")
   status       FollowUpStatus @default(PENDING)
   notes        String?        @db.Text
@@ -499,10 +499,10 @@ model FollowUp {
 }
 
 model Conversion {
-  id             String        @id @default(uuid()) @db.VarChar(36)
-  leadId         String        @unique @map("lead_id") @db.VarChar(36)
-  campaignId     String?       @map("campaign_id") @db.VarChar(36)
-  confirmedBy    String        @map("confirmed_by") @db.VarChar(36)
+  id             Int           @id @default(autoincrement())
+  leadId         Int           @unique @map("lead_id")
+  campaignId     Int?          @map("campaign_id")
+  confirmedBy    Int           @map("confirmed_by")
   convertedValue Decimal       @default(0.00) @map("converted_value") @db.Decimal(12, 2)
   notes          String?       @db.Text
   convertedAt    DateTime      @default(now()) @map("converted_at")
@@ -516,14 +516,14 @@ model Conversion {
 }
 
 model Transaction {
-  id              String        @id @default(uuid()) @db.VarChar(36)
-  conversionId    String        @map("conversion_id") @db.VarChar(36)
-  leadId          String        @map("lead_id") @db.VarChar(36)
+  id              Int           @id @default(autoincrement())
+  conversionId    Int           @map("conversion_id")
+  leadId          Int           @map("lead_id")
   amount          Decimal       @default(0.00) @db.Decimal(12, 2)
   paymentStatus   PaymentStatus @default(COMPLETED) @map("payment_status")
   paymentMethod   String        @default("CREDIT_CARD") @map("payment_method") @db.VarChar(50)
   transactionRef  String        @unique @map("transaction_ref") @db.VarChar(100)
-  recordedBy      String        @map("recorded_by") @db.VarChar(36)
+  recordedBy      Int           @map("recorded_by")
   transactionDate DateTime      @default(now()) @map("transaction_date")
   createdAt       DateTime      @default(now()) @map("created_at")
   conversion      Conversion    @relation(fields: [conversionId], references: [id], onDelete: Cascade)
@@ -536,8 +536,8 @@ model Transaction {
 }
 
 model Notification {
-  id        String           @id @default(uuid()) @db.VarChar(36)
-  userId    String           @map("user_id") @db.VarChar(36)
+  id        Int              @id @default(autoincrement())
+  userId    Int              @map("user_id")
   title     String           @db.VarChar(150)
   message   String           @db.Text
   type      NotificationType @default(INFO)
@@ -551,8 +551,8 @@ model Notification {
 }
 
 model AuditLog {
-  id            String   @id @default(uuid()) @db.VarChar(36)
-  actorId       String?  @map("actor_id") @db.VarChar(36)
+  id            Int      @id @default(autoincrement())
+  actorId       Int?     @map("actor_id")
   action        String   @db.VarChar(100)
   entityType    String   @map("entity_type") @db.VarChar(100)
   entityId      String   @map("entity_id") @db.VarChar(100)
@@ -569,7 +569,7 @@ model AuditLog {
 }
 
 model DailyPerformance {
-  id             String   @id @default(uuid()) @db.VarChar(36)
+  id             Int      @id @default(autoincrement())
   metricDate     DateTime @unique @map("metric_date") @db.Date
   totalSpend     Decimal  @default(0.00) @map("total_spend") @db.Decimal(12, 2)
   totalLeads     Int      @default(0) @map("total_leads")

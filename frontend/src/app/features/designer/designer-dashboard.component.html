@@ -1,23 +1,9 @@
 <div class="designer-dashboard">
-  <!-- Live Realtime Notification Toast Popup -->
-  <div class="realtime-toast" *ngIf="notifService.activeToast() as toast" [ngClass]="'toast-' + toast.type.toLowerCase()">
-    <div class="toast-icon">
-      <span class="material-symbols-outlined" *ngIf="toast.type === 'SUCCESS'">check_circle</span>
-      <span class="material-symbols-outlined" *ngIf="toast.type === 'WARNING'">warning</span>
-      <span class="material-symbols-outlined" *ngIf="toast.type === 'INFO'">notifications_active</span>
-    </div>
-    <div class="toast-content">
-      <strong class="toast-title">{{ toast.title }}</strong>
-      <p class="toast-message">{{ toast.message }}</p>
-    </div>
-    <button class="toast-close" (click)="notifService.closeToast()">×</button>
-  </div>
-
   <!-- Page Header -->
   <header class="page-header" *ngIf="!embedded">
     <div>
       <div class="role-badge-row">
-        <span class="role-chip" [class.chip-manager]="isManager()" [class.chip-designer]="!isManager()">
+        <span class="role-chip" [class.chip-manager]="isManager()" [class.chip-designer]="isDesigner()" [class.chip-bdm]="isBDM()">
           {{ authService.currentUser()?.fullName || 'User' }} • {{ authService.currentUser()?.role }}
         </span>
       </div>
@@ -31,244 +17,406 @@
     </div>
   </header>
 
-  <!-- Content Split: Task Board & Real-Time Timeline Panel -->
-  <div class="dashboard-split">
-    <!-- Main Task Board -->
-    <main class="main-board">
-      <div class="board-toolbar">
+  <!-- ========================================================================= -->
+  <!-- VIEW 1: DESIGNERS LIST IN TABLE FORMAT (when !selectedDesignerId() && !isDesigner()) -->
+  <!-- ========================================================================= -->
+  <ng-container *ngIf="!selectedDesignerId() && !isDesigner()">
+    <!-- Designers Table Card Container -->
+    <div class="designers-table-container">
+      <div class="table-toolbar">
+        <div class="toolbar-title-box">
+          <h2 class="card-main-title">Designers</h2>
+          <p class="card-main-sub" *ngIf="packageFilter">Assign {{ packageFilter }} tasks to a designer</p>
+          <p class="card-main-sub" *ngIf="!packageFilter">Assign tasks to a designer or view task queues</p>
+        </div>
         <div class="search-box">
-          <span class="material-symbols-outlined search-icon">search</span>
           <input
             type="text"
-            placeholder="Search tasks..."
-            (input)="onSearch($event)"
+            placeholder="Search designers..."
+            [ngModel]="designerSearchQuery()"
+            (input)="onDesignerSearch($event)"
           />
         </div>
+      </div>
 
-        <div class="toolbar-controls">
-          <div class="filter-dropdown-wrapper">
-            <span class="material-symbols-outlined filter-icon">filter_list</span>
-            <select
-              class="filter-dropdown-select"
-              [ngModel]="statusFilter()"
-              (change)="onFilterChange($event)">
-              <option value="ALL">All Statuses</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="REVISION_REQUIRED">Revisions</option>
-              <option value="SUBMITTED">Under Review</option>
-              <option value="COMPLETED">Approved</option>
-            </select>
-            <span class="material-symbols-outlined arrow-icon">expand_more</span>
+      <div class="table-responsive-wrapper">
+        <table class="designers-data-table">
+          <thead>
+            <tr>
+              <th>DESIGNER</th>
+              <th class="text-center">COMPLETED TASKS</th>
+              <th class="text-center">PENDING TASKS</th>
+              <th class="text-center">TOTAL TASKS</th>
+              <th class="text-right">ACTION</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let designer of filteredDesigners()" class="designer-table-row clickable-row" (click)="viewDesignerTasks(designer.id)">
+              <!-- Designer Profile -->
+              <td class="col-designer-profile">
+                <div class="designer-user-cell">
+                  <div class="designer-avatar-circle" [style.backgroundColor]="designer.avatarColor || '#7C3AED'">
+                    {{ getInitials(designer.name) }}
+                  </div>
+                  <div class="designer-text-meta">
+                    <span class="designer-name-strong">{{ designer.name }}</span>
+                    <span class="designer-email-sub">{{ designer.email }}</span>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Completed Task Count -->
+              <td class="text-center col-count">
+                <span class="stat-pill pill-completed" title="Completed Tasks">
+                  {{ designer.completedCount }}
+                </span>
+              </td>
+
+              <!-- Pending Task Count -->
+              <td class="text-center col-count">
+                <span class="stat-pill pill-pending" title="Pending Tasks">
+                  {{ designer.pendingCount }}
+                </span>
+              </td>
+
+              <!-- Total Task Count -->
+              <td class="text-center col-count">
+                <span class="stat-pill pill-total" title="Total Assigned Tasks">
+                  {{ designer.totalCount }}
+                </span>
+              </td>
+
+              <!-- Action Buttons: View Tasks & Assign Task -->
+              <td class="text-right col-actions" (click)="$event.stopPropagation()">
+                <div class="action-btn-group">
+                  <button
+                    class="btn btn-secondary btn-sm btn-view-tasks"
+                    (click)="viewDesignerTasks(designer.id)"
+                    title="View all tasks for {{ designer.name }}"
+                  >
+                    <span class="material-symbols-outlined icon-xs">visibility</span>
+                    <span>View</span>
+                  </button>
+                  <button
+                    *ngIf="canCreateTask()"
+                    class="btn btn-primary btn-sm btn-assign-task"
+                    (click)="openCreateTaskModal(designer.id)"
+                    title="Assign a new task to {{ designer.name }}"
+                  >
+                    <span class="material-symbols-outlined icon-xs">add_task</span>
+                    <span>Assign Task</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <tr *ngIf="filteredDesigners().length === 0">
+              <td colspan="5" class="empty-table-cell">
+                <div class="empty-table-state">
+                  <h4>No Designers Found</h4>
+                  <p>No designers match your search query "{{ designerSearchQuery() }}".</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ========================================================================= -->
+  <!-- VIEW 2: DEDICATED DESIGNER'S TASKS PAGE (when selectedDesignerId() || isDesigner()) -->
+  <!-- ========================================================================= -->
+  <ng-container *ngIf="selectedDesignerId() || isDesigner()">
+    <!-- Top Navigation & Profile Banner when viewing specific designer -->
+    <div class="designer-view-header" *ngIf="!isDesigner()">
+      <div class="back-nav-bar">
+        <button class="btn btn-secondary back-to-list-btn" (click)="backToDesignersList()">
+          <span class="material-symbols-outlined">arrow_back</span>
+          Back to Designers List
+        </button>
+      </div>
+
+      <div class="designer-profile-banner" *ngIf="selectedDesigner() as selDes">
+        <div class="banner-left">
+          <div class="banner-avatar" [style.backgroundColor]="selDes.avatarColor">
+            {{ getInitials(selDes.name) }}
+          </div>
+          <div class="banner-info">
+            <div class="banner-title-row">
+              <h2>{{ selDes.name }}</h2>
+              <span class="dept-badge">{{ selDes.department }}</span>
+            </div>
+            <span class="banner-email">{{ selDes.email }}</span>
+          </div>
+        </div>
+
+        <div class="banner-right">
+          <div class="designer-stat-badges">
+            <div class="stat-badge-item badge-completed">
+              <span class="badge-num">{{ selDes.completedCount }}</span>
+              <span class="badge-label">Completed</span>
+            </div>
+            <div class="stat-badge-item badge-pending">
+              <span class="badge-num">{{ selDes.pendingCount }}</span>
+              <span class="badge-label">Pending</span>
+            </div>
+            <div class="stat-badge-item badge-progress">
+              <span class="badge-num">{{ selDes.inProgressCount }}</span>
+              <span class="badge-label">In Progress</span>
+            </div>
+            <div class="stat-badge-item badge-total">
+              <span class="badge-num">{{ selDes.totalCount }}</span>
+              <span class="badge-label">Total Tasks</span>
+            </div>
           </div>
 
-          <button *ngIf="canCreateTask()" class="btn btn-primary create-task-btn" (click)="openCreateTaskModal()">
+          <button *ngIf="canCreateTask()" class="btn btn-primary assign-to-designer-btn" (click)="openCreateTaskModal(selDes.id)">
             <span class="material-symbols-outlined">add_task</span>
-            Create {{ packageFilter ? packageFilter + ' Task' : 'Task' }}
+            Assign Task to {{ selDes.name }}
           </button>
         </div>
       </div>
+    </div>
 
-      <!-- Task List Cards -->
-      <div class="task-list">
-        <div class="task-card" *ngFor="let task of filteredTasks()" [class.selected]="taskService.selectedTask()?.id === task.id" (click)="taskService.selectTask(task.id)">
-          <div class="task-header">
-            <div class="title-group">
-              <span class="priority-tag" [ngClass]="getPriorityBadgeClass(task.priority)">{{ task.priority }}</span>
-              <span class="campaign-chip">{{ task.campaignName }}</span>
-              <span class="package-tag-chip" *ngIf="task.packageName">{{ task.packageName }}</span>
-            </div>
-            <span class="status-badge" [ngClass]="getStatusBadgeClass(task.status)">{{ task.status }}</span>
+    <!-- Content Split: Task Board & Real-Time Timeline Panel -->
+    <div class="dashboard-split">
+      <!-- Main Task Board -->
+      <main class="main-board">
+        <div class="board-toolbar">
+          <div class="search-box">
+            <span class="material-symbols-outlined search-icon">search</span>
+            <input
+              type="text"
+              placeholder="Search {{ isDesigner() ? 'my' : (selectedDesigner()?.name ? selectedDesigner()!.name + '\'s' : '') }} tasks..."
+              (input)="onSearch($event)"
+            />
           </div>
 
-          <h3 class="task-title">{{ task.title }}</h3>
-          <p class="task-desc" *ngIf="task.description">{{ task.description }}</p>
-
-          <!-- Visual Workflow Pipeline Stepper on Card -->
-          <div class="card-workflow-pipeline">
-            <div class="pipeline-track">
-              <div
-                class="pipeline-step-node"
-                *ngFor="let step of getWorkflowSteps(task)"
-                [ngClass]="'node-' + step.state"
-                [title]="step.title + ': ' + step.subtitle"
-              >
-                <div class="node-circle">
-                  <span class="material-symbols-outlined node-icon">{{ step.icon }}</span>
-                </div>
-                <span class="node-label">{{ step.title }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="attached-doc-card" *ngIf="task.attachmentName || task.attachmentUrl || task.content">
-            <a
-              href="javascript:void(0)"
-              class="attached-doc-link"
-              (click)="openDocViewer($event, task.attachmentUrl, task.attachmentName, task.content)"
-              [title]="'View document: ' + (task.attachmentName || 'Content Document')"
-            >
-              <div class="doc-icon-box">
-                <span class="material-symbols-outlined">description</span>
-              </div>
-              <div class="doc-text-meta">
-                <span class="doc-label">Content Brief Document</span>
-                <span class="doc-filename">{{ task.attachmentName || task.content || 'Content_Brief_Doc.pdf' }}</span>
-              </div>
-              <span class="material-symbols-outlined open-icon">open_in_new</span>
-            </a>
-          </div>
-
-          <div class="revision-feedback-alert" *ngIf="task.status === 'REVISION_REQUIRED' && task.reviewerFeedback">
-            <div class="alert-header">
-              <span class="material-symbols-outlined alert-icon">rate_review</span>
-              <strong>Manager Feedback & Revision Remarks:</strong>
-            </div>
-            <p class="alert-body">"{{ task.reviewerFeedback }}"</p>
-          </div>
-
-          <!-- Progress Bar -->
-          <div class="progress-container">
-            <div class="progress-bar-bg">
-              <div class="progress-fill" [style.width.%]="task.progressPercent"></div>
-            </div>
-            <span class="progress-pct">{{ task.progressPercent }}%</span>
-          </div>
-
-          <!-- Card Footer -->
-          <div class="task-footer">
-            <div class="meta-info">
-              <span class="material-symbols-outlined icon-sm">event</span>
-              <span>Due: {{ task.dueDate | date:'mediumDate' }}</span>
-              <span class="assignee-tag">Assignee: {{ getAssigneeName(task) }}</span>
-              <span class="version-chip" *ngIf="task.versions && task.versions.length > 0">
-                v{{ task.versions[0].versionNumber }}.0
-              </span>
-            </div>
-
-            <div class="action-buttons" (click)="$event.stopPropagation()">
-              <button *ngIf="task.status === 'ASSIGNED' && !isManager()" class="btn btn-xs btn-outline" (click)="acceptTask(task)">
-                Accept Task
-              </button>
-
-              <button *ngIf="task.status === 'ACCEPTED' && !isManager()" class="btn btn-xs btn-warning" (click)="startWork(task)">
-                Start Work
-              </button>
-
-              <button *ngIf="(task.status === 'IN_PROGRESS' || task.status === 'REVISION_REQUIRED') && !isManager()" class="btn btn-xs btn-upload" (click)="openUploadModal(task)">
-                <span class="material-symbols-outlined icon-xs">upload_file</span>
-                Upload Design
-              </button>
-
-              <button *ngIf="(task.status === 'SUBMITTED' || task.status === 'RESUBMITTED' || task.status === 'UNDER_REVIEW') && isManager()" class="btn btn-xs btn-review" (click)="openReviewModal(task)">
-                <span class="material-symbols-outlined icon-xs">verified</span>
-                Review
-              </button>
-
-              <button class="btn btn-xs btn-danger-outline" (click)="deleteTask($event, task)" title="Delete Task">
-                <span class="material-symbols-outlined icon-xs">delete</span>
-                Delete
-              </button>
+          <div class="toolbar-controls">
+            <div class="filter-dropdown-wrapper">
+              <span class="material-symbols-outlined filter-icon">filter_list</span>
+              <select
+                class="filter-dropdown-select"
+                [ngModel]="statusFilter()"
+                (change)="onFilterChange($event)">
+                <option value="ALL">All Statuses</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="REVISION_REQUIRED">Revisions</option>
+                <option value="SUBMITTED">Under Review</option>
+                <option value="COMPLETED">Approved</option>
+                <option value="BDM_FLOW">BDM Tasks Flow</option>
+              </select>
+              <span class="material-symbols-outlined arrow-icon">expand_more</span>
             </div>
           </div>
         </div>
 
-        <div *ngIf="filteredTasks().length === 0" class="empty-state">
-          <span class="material-symbols-outlined empty-icon">assignment_late</span>
-          <p>No tasks found for the current filter.</p>
-        </div>
-      </div>
-    </main>
-
-    <!-- Side Panel: Redesigned Task Detail & Workflow History Drawer -->
-    <aside class="side-panel">
-      <div class="panel-card detail-card" *ngIf="taskService.selectedTask() as selTask">
-        <!-- Panel Header -->
-        <div class="panel-header">
-          <div class="header-title-box">
-            <span class="status-badge" [ngClass]="getStatusBadgeClass(selTask.status)">{{ selTask.status }}</span>
-            <span class="priority-tag" [ngClass]="getPriorityBadgeClass(selTask.priority)">{{ selTask.priority }}</span>
-          </div>
-          <div class="header-action-group">
-            <button class="btn-icon-danger" (click)="deleteTask($event, selTask)" title="Delete Task">
-              <span class="material-symbols-outlined">delete</span>
-            </button>
-            <button class="close-btn" (click)="taskService.closeTaskDetail()">×</button>
-          </div>
-        </div>
-
-        <div class="detail-body">
-          <h4 class="detail-title">{{ selTask.title }}</h4>
-          <!-- Structured Tabs -->
-          <div class="detail-nav-tabs">
-            <button
-              class="nav-tab-btn"
-              [class.active]="activeDetailTab() === 'VERSIONS'"
-              (click)="activeDetailTab.set('VERSIONS')"
-            >
-              <span class="material-symbols-outlined icon-xs">collections</span>
-              Versions ({{ selTask.versions?.length || 0 }})
-            </button>
-
-          </div>
-          <!-- TAB 2: VERSIONS HISTORY -->
-          <div class="tab-pane-content" *ngIf="activeDetailTab() === 'VERSIONS'">
-            <div class="versions-header-bar">
-              <span class="section-title">Design Versions ({{ selTask.versions?.length || 0 }})</span>
-              <button
-                *ngIf="(selTask.status === 'IN_PROGRESS' || selTask.status === 'REVISION_REQUIRED' || selTask.status === 'ACCEPTED') && !isManager()"
-                class="btn btn-xs btn-primary"
-                (click)="openUploadModal(selTask)"
-              >
-                + New Version
-              </button>
+        <!-- Task List Cards -->
+        <div class="task-list">
+          <div class="task-card" *ngFor="let task of filteredTasks()" [class.selected]="taskService.selectedTask()?.id === task.id" (click)="taskService.selectTask(task.id)">
+            <div class="task-header">
+              <div class="title-group">
+                <span class="priority-tag" [ngClass]="getPriorityBadgeClass(task.priority)">{{ task.priority }}</span>
+                <span class="campaign-chip">{{ task.campaignName }}</span>
+                <span class="package-tag-chip" *ngIf="task.packageName">{{ task.packageName }}</span>
+                <span class="bdm-flow-chip" *ngIf="task.creatorRole === 'BDM'">
+                  <span class="material-symbols-outlined icon-xs">hub</span>
+                  BDM ➔ Designer
+                </span>
+              </div>
+              <span class="status-badge" [ngClass]="getStatusBadgeClass(task.status)">{{ task.status }}</span>
             </div>
-            <div class="version-gallery-list" *ngIf="selTask.versions && selTask.versions.length > 0">
-              <div
-                class="version-gallery-card"
-                *ngFor="let ver of selTask.versions"
-                (click)="openDocViewer($event, ver.filePath, ver.fileName, ver.fileContent || ver.changelog)"
-              >
-                <div class="ver-card-top">
-                  <div class="ver-badge-group">
-                    <span class="ver-num-badge">v{{ ver.versionNumber }}.0</span>
-                    <span class="ver-name-text">{{ ver.fileName }}</span>
+
+            <h3 class="task-title">{{ task.title }}</h3>
+            <p class="task-desc" *ngIf="task.description">{{ task.description }}</p>
+
+            <!-- Visual Workflow Pipeline Stepper on Card -->
+            <div class="card-workflow-pipeline">
+              <div class="pipeline-track">
+                <div
+                  class="pipeline-step-node"
+                  *ngFor="let step of getWorkflowSteps(task)"
+                  [ngClass]="'node-' + step.state"
+                  [title]="step.title + ': ' + step.subtitle"
+                >
+                  <div class="node-circle">
+                    <span class="material-symbols-outlined node-icon">{{ step.icon }}</span>
                   </div>
-                  <span class="ver-time">{{ ver.createdAt | date:'shortTime' }}</span>
-                </div>
-
-                <p class="ver-changelog-text" *ngIf="ver.changelog">"{{ ver.changelog }}"</p>
-
-                <div class="ver-card-bottom">
-                  <span class="ver-author">Submitted by: {{ ver.submittedByName || 'Designer' }}</span>
-                  <span class="btn-inspect-link">
-                    <span class="material-symbols-outlined icon-xs">visibility</span>
-                    Preview Asset
-                  </span>
+                  <span class="node-label">{{ step.title }}</span>
                 </div>
               </div>
             </div>
 
-            <div *ngIf="!selTask.versions || selTask.versions.length === 0" class="empty-tab-state">
-              <span class="material-symbols-outlined empty-tab-icon">collections</span>
-              <p>No creative versions uploaded yet. Designer will upload design files after accepting work.</p>
+            <div class="attached-doc-card" *ngIf="task.attachmentName || task.attachmentUrl || task.content">
+              <a
+                href="javascript:void(0)"
+                class="attached-doc-link"
+                (click)="openDocViewer($event, task.attachmentUrl, task.attachmentName, task.content)"
+                [title]="'View document: ' + (task.attachmentName || 'Content Document')"
+              >
+                <div class="doc-icon-box">
+                  <span class="material-symbols-outlined">description</span>
+                </div>
+                <div class="doc-text-meta">
+                  <span class="doc-label">Content Brief Document</span>
+                  <span class="doc-filename">{{ task.attachmentName || task.content || 'Content_Brief_Doc.pdf' }}</span>
+                </div>
+                <span class="material-symbols-outlined open-icon">open_in_new</span>
+              </a>
+            </div>
+
+            <div class="revision-feedback-alert" *ngIf="task.status === 'REVISION_REQUIRED' && task.reviewerFeedback">
+              <div class="alert-header">
+                <span class="material-symbols-outlined alert-icon">rate_review</span>
+                <strong>Manager Feedback & Revision Remarks:</strong>
+              </div>
+              <p class="alert-body">"{{ task.reviewerFeedback }}"</p>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-container">
+              <div class="progress-bar-bg">
+                <div class="progress-fill" [style.width.%]="task.progressPercent"></div>
+              </div>
+              <span class="progress-pct">{{ task.progressPercent }}%</span>
+            </div>
+
+            <!-- Card Footer -->
+            <div class="task-footer">
+              <div class="meta-info">
+                <span class="material-symbols-outlined icon-sm">event</span>
+                <span>Due: {{ task.dueDate | date:'mediumDate' }}</span>
+                <span class="assignee-tag">Assignee: {{ getAssigneeName(task) }}</span>
+                <span class="version-chip" *ngIf="task.versions && task.versions.length > 0">
+                  v{{ task.versions[0].versionNumber }}.0
+                </span>
+              </div>
+
+              <div class="action-buttons" (click)="$event.stopPropagation()">
+                <button *ngIf="(task.status === 'ASSIGNED' || task.status === 'ACCEPTED') && isDesigner()" class="btn btn-xs btn-warning" (click)="startWork(task)">
+                  Start Work
+                </button>
+
+                <button *ngIf="(task.status === 'ASSIGNED' || task.status === 'IN_PROGRESS' || task.status === 'REVISION_REQUIRED' || task.status === 'ACCEPTED') && isDesigner()" class="btn btn-xs btn-upload" (click)="openUploadModal(task)">
+                  <span class="material-symbols-outlined icon-xs">upload_file</span>
+                  Upload Design
+                </button>
+
+                <button *ngIf="(task.status === 'SUBMITTED' || task.status === 'RESUBMITTED' || task.status === 'UNDER_REVIEW') && (isManager() || isBDM())" class="btn btn-xs btn-review" (click)="openReviewModal(task)">
+                  <span class="material-symbols-outlined icon-xs">verified</span>
+                  Review
+                </button>
+
+                <button *ngIf="canDeleteTask()" class="btn btn-xs btn-danger-outline" (click)="deleteTask($event, task)" title="Delete Task">
+                  <span class="material-symbols-outlined icon-xs">delete</span>
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="filteredTasks().length === 0" class="empty-state">
+            <span class="material-symbols-outlined empty-icon">assignment_late</span>
+            <p>No tasks found for {{ selectedDesigner() ? selectedDesigner()!.name : 'this filter' }}.</p>
+          </div>
+        </div>
+      </main>
+
+      <!-- Side Panel: Redesigned Task Detail & Workflow History Drawer -->
+      <aside class="side-panel">
+        <div class="panel-card detail-card" *ngIf="taskService.selectedTask() as selTask">
+          <!-- Panel Header -->
+          <div class="panel-header">
+            <div class="header-title-box">
+              <span class="status-badge" [ngClass]="getStatusBadgeClass(selTask.status)">{{ selTask.status }}</span>
+              <span class="priority-tag" [ngClass]="getPriorityBadgeClass(selTask.priority)">{{ selTask.priority }}</span>
+            </div>
+            <div class="header-action-group">
+              <button *ngIf="canDeleteTask()" class="btn-icon-danger" (click)="deleteTask($event, selTask)" title="Delete Task">
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+              <button class="close-btn" (click)="taskService.closeTaskDetail()" title="Close Drawer">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="detail-body">
+            <h4 class="detail-title">{{ selTask.title }}</h4>
+            <!-- Structured Tabs -->
+            <div class="detail-nav-tabs">
+              <button
+                class="nav-tab-btn"
+                [class.active]="activeDetailTab() === 'VERSIONS'"
+                (click)="activeDetailTab.set('VERSIONS')"
+              >
+                <span class="material-symbols-outlined icon-xs">collections</span>
+                View Versions ({{ selTask.versions?.length || 0 }})
+              </button>
+            </div>
+            <!-- TAB 2: VERSIONS HISTORY -->
+            <div class="tab-pane-content" *ngIf="activeDetailTab() === 'VERSIONS'">
+              <div class="versions-header-bar">
+                <span class="section-title">Design Versions ({{ selTask.versions?.length || 0 }})</span>
+                <button
+                  *ngIf="(selTask.status === 'ASSIGNED' || selTask.status === 'IN_PROGRESS' || selTask.status === 'REVISION_REQUIRED' || selTask.status === 'ACCEPTED') && isDesigner()"
+                  class="btn btn-xs btn-primary"
+                  (click)="openUploadModal(selTask)"
+                >
+                  + New Version
+                </button>
+              </div>
+              <div class="version-gallery-list" *ngIf="selTask.versions && selTask.versions.length > 0">
+                <div
+                  class="version-gallery-card"
+                  *ngFor="let ver of selTask.versions"
+                  (click)="openDocViewer($event, ver.filePath, ver.fileName, ver.fileContent || ver.changelog)"
+                >
+                  <div class="ver-card-top">
+                    <div class="ver-badge-group">
+                      <span class="ver-num-badge">v{{ ver.versionNumber }}.0</span>
+                      <span class="ver-name-text">{{ ver.fileName }}</span>
+                    </div>
+                    <span class="ver-time">{{ ver.createdAt | date:'shortTime' }}</span>
+                  </div>
+
+                  <p class="ver-changelog-text" *ngIf="ver.changelog">"{{ ver.changelog }}"</p>
+
+                  <div class="ver-card-bottom">
+                    <span class="ver-author">Submitted by: {{ ver.submittedByName || 'Designer' }}</span>
+                    <span class="btn-inspect-link">
+                      <span class="material-symbols-outlined icon-xs">visibility</span>
+                      Preview Asset
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div *ngIf="!selTask.versions || selTask.versions.length === 0" class="empty-tab-state">
+                <span class="material-symbols-outlined empty-tab-icon">collections</span>
+                <p>No creative versions uploaded yet. Designer will upload design files for this task.</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="panel-card empty-panel-hint" *ngIf="!taskService.selectedTask()">
-        <span class="material-symbols-outlined hint-icon">touch_app</span>
-        <p>Click Tasks For the Versions</p>
-      </div>
-    </aside>
-  </div>
+        <div class="panel-card empty-panel-hint" *ngIf="!taskService.selectedTask()">
+          <span class="material-symbols-outlined hint-icon">touch_app</span>
+          <p>Click Tasks For the Versions</p>
+        </div>
+      </aside>
+    </div>
+  </ng-container>
 
   <!-- Modal: Upload Creative Version -->
   <div class="modal-backdrop" *ngIf="isUploadModalOpen()">
     <div class="modal-card">
       <div class="modal-header">
         <h3>Upload Design</h3>
-        <button class="close-btn" (click)="closeUploadModal()">×</button>
+        <button class="close-btn" (click)="closeUploadModal()" title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
       </div>
 
       <form [formGroup]="uploadForm" (ngSubmit)="onSubmitUpload()">
@@ -310,7 +458,9 @@
     <div class="modal-card">
       <div class="modal-header">
         <h3>Review Design</h3>
-        <button class="close-btn" (click)="closeReviewModal()">×</button>
+        <button class="close-btn" (click)="closeReviewModal()" title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
       </div>
 
       <form [formGroup]="reviewForm" (ngSubmit)="onSubmitReview()">
@@ -352,7 +502,9 @@
             <span class="modal-subtitle">Package Workspace: <strong>{{ createTaskForm.get('packageName')?.value || 'Careermate' }}</strong></span>
           </div>
         </div>
-        <button class="close-btn" (click)="closeCreateTaskModal()" title="Close">&times;</button>
+        <button class="close-btn" (click)="closeCreateTaskModal()" title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
       </div>
 
       <form [formGroup]="createTaskForm" (ngSubmit)="onSubmitCreateTask()">
@@ -475,7 +627,9 @@
             <span class="doc-subhead">Document Brief & Asset Preview</span>
           </div>
         </div>
-        <button class="close-btn" (click)="closeDocViewer()">×</button>
+        <button class="close-btn" (click)="closeDocViewer()" title="Close Document">
+          <span class="material-symbols-outlined">close</span>
+        </button>
       </div>
       <div class="modal-body doc-viewer-body">
         <div class="iframe-container">

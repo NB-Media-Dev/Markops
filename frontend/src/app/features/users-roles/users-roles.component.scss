@@ -1,11 +1,10 @@
 .mo-top-header {
-  height: 64px;
-  background-color: #FFFFFF;
-  border-bottom: 1px solid var(--mo-slate-200);
+  background-color: transparent;
+  border-bottom: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1.75rem;
+  padding: 0 0 1.5rem 0;
   flex-shrink: 0;
 }
 
@@ -14,24 +13,25 @@
   align-items: center;
   gap: 0.375rem;
   font-size: 0.75rem;
-  color: var(--mo-slate-500);
-  margin-bottom: 0.125rem;
+  color: var(--mo-text-muted);
+  margin-bottom: 0.25rem;
 
   .bc-sep {
-    color: var(--mo-slate-300);
+    color: var(--mo-sand-400);
   }
 
   .bc-active {
-    color: var(--mo-orange-600);
+    color: var(--mo-forest-800);
     font-weight: 600;
   }
 }
 
 .header-page-title {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: var(--mo-navy-900);
-  letter-spacing: -0.01em;
+  font-family: var(--mo-font-serif);
+  font-size: 2.15rem;
+  font-weight: 600;
+  color: var(--mo-text-main);
+  letter-spacing: -0.015em;
 }
 
 .header-actions {
@@ -231,7 +231,7 @@
   &.active {
     background-color: var(--mo-orange-600);
     border-color: var(--mo-orange-700);
-    color: #FFFFFF;
+    color: #22C55E;
     font-weight: 600;
   }
 }
@@ -325,6 +325,7 @@
   &.digital_marketing { background: linear-gradient(135deg, #4338CA, #3730A3); }
   &.designer { background: linear-gradient(135deg, #7E22CE, #6B21A8); }
   &.telecaller { background: linear-gradient(135deg, #15803D, #166534); }
+  &.bdm { background: linear-gradient(135deg, #A21CAF, #86198F); }
 }
 
 .user-cell-meta {
@@ -450,6 +451,7 @@
   &.digital_marketing { background: #E0E7FF; color: #3730A3; border: 1px solid #C7D2FE; }
   &.designer { background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF; }
   &.telecaller { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
+  &.bdm { background: #FDF4FF; color: #A21CAF; border: 1px solid #F0ABFC; }
 }
 
 .status-pill-toggle {

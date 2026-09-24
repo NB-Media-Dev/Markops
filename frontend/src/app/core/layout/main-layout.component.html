@@ -4,16 +4,7 @@
     <header class="top-navbar">
       <div class="navbar-left">
         <a routerLink="/dashboard" class="brand-link">
-          <div class="brand-logo">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-            </svg>
-          </div>
-          <span class="brand-text">MARKOPS</span>
-        </a>
-        <a routerLink="/dashboard" class="nav-home-btn" routerLinkActive="active">
-          <span class="material-symbols-outlined fs-18">home</span>
-          Dashboard
+          <span class="brand-text">MarkOps</span>
         </a>
       </div>
 
@@ -21,7 +12,7 @@
         <!-- Notification Bell Button -->
         <div class="notification-wrapper">
           <button class="notif-bell-btn" (click)="toggleNotificationFlyout()" title="View Notifications">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
               <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
             </svg>
@@ -42,10 +33,11 @@
 
             <div class="notif-items-list">
               <div
-                class="notif-item"
+                class="notif-item clickable-notif"
                 *ngFor="let item of notifService.notifications()"
                 [class.unread]="!item.isRead"
-                (click)="notifService.markAsRead(item.id)"
+                (click)="onNotificationClick(item)"
+                title="Click to open related page"
               >
                 <div class="notif-icon" [ngClass]="item.type.toLowerCase()">
                   @switch (item.type) {
@@ -56,7 +48,10 @@
                   }
                 </div>
                 <div class="notif-content">
-                  <div class="notif-title">{{ item.title }}</div>
+                  <div class="notif-title-row">
+                    <span class="notif-title">{{ item.title }}</span>
+                    <span class="nav-arrow-hint">➔</span>
+                  </div>
                   <div class="notif-message">{{ item.message }}</div>
                   <div class="notif-time">{{ item.createdAt | date:'shortTime' }}</div>
                 </div>
@@ -78,23 +73,45 @@
             {{ (authService.currentUser()?.fullName || 'A')[0] }}
           </div>
           <div class="user-details">
-            <span class="name-str">{{ authService.currentUser()?.fullName || 'System Admin' }}</span>
+            <span class="name-str">{{ authService.currentUser()?.fullName || 'System Administrator' }}</span>
             <span class="role-str">{{ roleDisplayLabel() }}</span>
           </div>
         </div>
 
         <button class="header-logout-btn" (click)="logout()" title="Sign Out">
-          <span class="material-symbols-outlined fs-18">logout</span>
           <span>Logout</span>
         </button>
       </div>
     </header>
 
+    <!-- Global Realtime Notification Toast Popup across entire App -->
+    <div
+      class="global-realtime-toast"
+      *ngIf="notifService.activeToast() as toast"
+      [ngClass]="'toast-' + toast.type.toLowerCase()"
+      (click)="onToastClick(toast)"
+      title="Click notification to navigate to page"
+    >
+      <div class="toast-icon">
+        <span class="material-symbols-outlined" *ngIf="toast.type === 'SUCCESS'">check_circle</span>
+        <span class="material-symbols-outlined" *ngIf="toast.type === 'WARNING'">warning</span>
+        <span class="material-symbols-outlined" *ngIf="toast.type === 'INFO'">notifications_active</span>
+        <span class="material-symbols-outlined" *ngIf="toast.type === 'ALERT'">bolt</span>
+      </div>
+      <div class="toast-content">
+        <strong class="toast-title">{{ toast.title }}</strong>
+        <p class="toast-message">{{ toast.message }}</p>
+        <span class="toast-action-hint">Click to open ➔</span>
+      </div>
+      <button class="toast-close" (click)="onToastClose($event)" title="Close Notification">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
     <div class="content-viewport">
       <router-outlet></router-outlet>
     </div>
   </main>
-
 </div>
 
 

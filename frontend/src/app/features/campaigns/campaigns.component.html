@@ -1,101 +1,352 @@
-<div class="campaigns-page">
-  <header class="page-header">
+<div class="campaigns-page" [class.embedded-view]="embedded">
+  <!-- Page Header -->
+  <header class="page-header" *ngIf="!embedded">
     <div>
-      <h1>Campaign Planning & Targets</h1>
-      <p class="subtitle">Manage campaign budgets, lead goals, target CPL, and performance ratios</p>
+      <h1 class="page-title">Digital Marketing Campaigns</h1>
+      <p class="subtitle">Real-time performance tracking, budgets, lead metrics, CPL, and conversion rates</p>
     </div>
     <div class="header-actions">
-      <button class="btn btn-primary" (click)="openModal()">
-        <span class="material-symbols-outlined">add_chart</span>
-        Create Campaign Plan
+      <button class="btn btn-primary" (click)="openCreateModal()">
+        <span class="material-symbols-outlined">add_circle</span>
+        Add Campaign
       </button>
     </div>
   </header>
 
-  <!-- Filter Bar -->
-  <div class="filter-bar">
+  <!-- Embedded Subheader -->
+  <div class="embedded-header-row" *ngIf="embedded">
+    <div>
+      <h3 class="embedded-title">
+        <span class="material-symbols-outlined text-forest fs-20">campaign</span>
+        {{ packageFilter ? packageFilter + ' Campaigns' : 'Package Campaigns' }}
+      </h3>
+      <p class="embedded-subtitle">Manage campaign budget, lead goals, CPL, and conversion targets for this package</p>
+    </div>
+    <button class="btn btn-primary btn-sm" (click)="openCreateModal()">
+      <span class="material-symbols-outlined fs-16">add_circle</span>
+      Add Campaign
+    </button>
+  </div>
+
+  <!-- Flash Messages -->
+  <div class="alert alert-success" *ngIf="successMessage()">
+    <span class="material-symbols-outlined">check_circle</span>
+    {{ successMessage() }}
+  </div>
+
+  <div class="alert alert-danger" *ngIf="errorMessage()">
+    <span class="material-symbols-outlined">error</span>
+    {{ errorMessage() }}
+  </div>
+
+  <!-- KPI Summary Row -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap icon-spend">
+        <span class="material-symbols-outlined">payments</span>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Total Ad Spend</span>
+        <span class="kpi-value">₹{{ totalSpend() | number:'1.2-2' }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap icon-leads">
+        <span class="material-symbols-outlined">group</span>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Total Leads</span>
+        <span class="kpi-value">{{ totalLeads() | number }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap icon-cpl">
+        <span class="material-symbols-outlined">trending_down</span>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Average CPL</span>
+        <span class="kpi-value">₹{{ averageCpl() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap icon-conv">
+        <span class="material-symbols-outlined">verified</span>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Total Conversions</span>
+        <span class="kpi-value">{{ totalConversions() | number }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Search Toolbar -->
+  <div class="toolbar-card">
+    <div class="search-box">
+      <span class="material-symbols-outlined">search</span>
+      <input
+        type="text"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+        placeholder="Search campaign name or objective..."
+      />
+    </div>
+
     <div class="filter-group">
-      <label>Status Filter:</label>
+      <label>Status:</label>
       <select [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event)">
         <option value="ALL">All Statuses</option>
         <option value="ACTIVE">Active</option>
         <option value="PLANNING">Planning</option>
+        <option value="PAUSED">Paused</option>
         <option value="COMPLETED">Completed</option>
       </select>
     </div>
   </div>
 
-  <!-- Campaigns Grid -->
-  <div class="campaigns-grid">
-    <div class="cmp-card" *ngFor="let cmp of filteredCampaigns">
-      <div class="cmp-header">
-        <span class="cmp-title">{{ cmp.name }}</span>
-        <span class="badge" [ngClass]="cmp.status === 'ACTIVE' ? 'badge-success' : 'badge-amber'">{{ cmp.status }}</span>
-      </div>
-      <div class="cmp-objective">Objective: {{ cmp.objective }}</div>
+  <!-- Primary Campaigns Table -->
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Campaign</th>
+            <th>Status</th>
+            <th>Spend</th>
+            <th>Leads</th>
+            <th>CPL</th>
+            <th>Qualified</th>
+            <th>Conversions</th>
+            <th>Conv. Rate</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let cmp of filteredCampaigns" class="table-row-hover">
+            <!-- Campaign Name & Objective -->
+            <td>
+              <div class="cmp-identity">
+                <span class="cmp-name">{{ cmp.name }}</span>
+                <span class="cmp-sub">{{ cmp.objective | titlecase }} &bull; {{ cmp.startDate }}</span>
+              </div>
+            </td>
 
-      <div class="cmp-metrics-grid">
-        <div class="metric-item">
-          <span class="m-label">Budget</span>
-          <span class="m-value">₹{{ cmp.budget | number:'1.0-0' }}</span>
+            <!-- Status -->
+            <td>
+              <span
+                class="badge"
+                [ngClass]="{
+                  'badge-success': cmp.status === 'ACTIVE',
+                  'badge-amber': cmp.status === 'PLANNING',
+                  'badge-blue': cmp.status === 'PAUSED',
+                  'badge-neutral': cmp.status === 'COMPLETED'
+                }"
+              >
+                {{ cmp.status }}
+              </span>
+            </td>
+
+            <!-- Spend -->
+            <td class="font-bold text-navy">₹{{ cmp.spend | number:'1.2-2' }}</td>
+
+            <!-- Leads -->
+            <td>
+              <span class="pill-count">{{ cmp.leadsCount | number }}</span>
+            </td>
+
+            <!-- CPL -->
+            <td class="font-bold text-teal">₹{{ cmp.cpl | number:'1.2-2' }}</td>
+
+            <!-- Qualified -->
+            <td>
+              <span class="text-subtle font-medium">{{ cmp.qualifiedLeads | number }}</span>
+            </td>
+
+            <!-- Conversions -->
+            <td class="font-bold text-green">{{ cmp.conversions | number }}</td>
+
+            <!-- Conv. Rate -->
+            <td>
+              <div class="conv-rate-wrap">
+                <span class="rate-val font-bold">{{ cmp.convRate }}%</span>
+                <div class="rate-bar-bg">
+                  <div class="rate-bar-fill" [style.width.%]="cmp.convRate > 100 ? 100 : cmp.convRate"></div>
+                </div>
+              </div>
+            </td>
+
+            <!-- Actions -->
+            <td class="text-right actions-col">
+              <div class="action-buttons-group">
+                <button
+                  class="btn-icon-action btn-edit"
+                  (click)="openEditModal(cmp)"
+                  title="Edit Campaign"
+                >
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button
+                  class="btn-icon-action btn-delete"
+                  (click)="confirmDelete(cmp)"
+                  title="Delete Campaign"
+                >
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngIf="filteredCampaigns.length === 0">
+            <td colspan="9" class="empty-state-cell">
+              <div class="empty-state-box">
+                <span class="material-symbols-outlined empty-icon">campaign</span>
+                <p class="empty-title">No campaigns found</p>
+                <p class="empty-subtitle">Create a new digital marketing campaign to get started.</p>
+                <button class="btn btn-primary btn-sm" (click)="openCreateModal()">
+                  <span class="material-symbols-outlined">add</span> Create Campaign
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Create / Edit Modal -->
+  <div class="modal-backdrop" *ngIf="showModal()" (click)="closeModal()">
+    <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="material-symbols-outlined title-icon">{{ isEditing() ? 'edit_note' : 'add_circle' }}</span>
+          <h2>{{ isEditing() ? 'Edit Campaign' : 'Create New Campaign' }}</h2>
         </div>
-        <div class="metric-item">
-          <span class="m-label">Target Leads</span>
-          <span class="m-value">{{ cmp.targetLeads }}</span>
+        <button class="btn-close-modal" (click)="closeModal()" aria-label="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group flex-2">
+            <label>Campaign Name <span class="required">*</span></label>
+            <input
+              type="text"
+              [(ngModel)]="formModel.name"
+              placeholder="e.g. Meta Q4 Leads Acceleration"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group flex-1">
+            <label>Status</label>
+            <select [(ngModel)]="formModel.status" class="form-input">
+              <option value="ACTIVE">Active</option>
+              <option value="PLANNING">Planning</option>
+              <option value="PAUSED">Paused</option>
+              <option value="COMPLETED">Completed</option>
+            </select>
+          </div>
         </div>
-        <div class="metric-item">
-          <span class="m-label">Target CPL</span>
-          <span class="m-value">₹{{ cmp.targetCpl }}</span>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Objective</label>
+            <select [(ngModel)]="formModel.objective" class="form-input">
+              <option value="LEAD_GENERATION">Lead Generation</option>
+              <option value="BRAND_AWARENESS">Brand Awareness</option>
+              <option value="PERFORMANCE_SCALE">Performance Scale</option>
+              <option value="RETARGETING">Retargeting</option>
+            </select>
+          </div>
+
+          <div class="form-group flex-1">
+            <label>Start Date</label>
+            <input type="date" [(ngModel)]="formModel.startDate" class="form-input" />
+          </div>
+
+          <div class="form-group flex-1">
+            <label>Budget (₹)</label>
+            <input type="number" [(ngModel)]="formModel.budget" min="0" class="form-input" />
+          </div>
         </div>
-        <div class="metric-item">
-          <span class="m-label">Current Spend</span>
-          <span class="m-value text-amber">₹{{ cmp.spend | number:'1.0-0' }}</span>
+
+        <!-- Metrics Row with Live Calculation Previews -->
+        <div class="section-divider">
+          <span>Performance & Conversion Metrics</span>
         </div>
-        <div class="metric-item">
-          <span class="m-label">Actual Leads</span>
-          <span class="m-value text-blue">{{ cmp.leadsCount }}</span>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Spend (₹)</label>
+            <input type="number" [(ngModel)]="formModel.spend" min="0" class="form-input" />
+          </div>
+
+          <div class="form-group flex-1">
+            <label>Leads Count</label>
+            <input type="number" [(ngModel)]="formModel.leadsCount" min="0" class="form-input" />
+          </div>
+
+          <div class="form-group flex-1">
+            <label>Qualified Leads</label>
+            <input type="number" [(ngModel)]="formModel.qualifiedLeads" min="0" class="form-input" />
+          </div>
+
+          <div class="form-group flex-1">
+            <label>Conversions</label>
+            <input type="number" [(ngModel)]="formModel.conversions" min="0" class="form-input" />
+          </div>
         </div>
-        <div class="metric-item">
-          <span class="m-label">Revenue Generated</span>
-          <span class="m-value text-green">₹{{ cmp.revenue | number:'1.0-0' }}</span>
+
+        <!-- Auto Computed Metrics Badges -->
+        <div class="live-calc-panel">
+          <div class="calc-item">
+            <span class="calc-label">Auto-Computed CPL</span>
+            <span class="calc-val">₹{{ computedModalCpl }}</span>
+            <span class="calc-formula">(Spend / Leads)</span>
+          </div>
+          <div class="calc-item">
+            <span class="calc-label">Auto-Computed Conv. Rate</span>
+            <span class="calc-val">{{ computedModalConvRate }}%</span>
+            <span class="calc-formula">(Conversions / Leads * 100)</span>
+          </div>
         </div>
       </div>
 
-      <div class="cmp-footer">
-        <span>Owner: {{ cmp.ownerName }}</span>
-        <span>Started: {{ cmp.startDate }}</span>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="saveCampaign()">
+          <span class="material-symbols-outlined">save</span>
+          {{ isEditing() ? 'Update Campaign' : 'Save Campaign' }}
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Create Modal -->
-  <div class="modal-backdrop" *ngIf="showModal()">
-    <div class="modal-card">
-      <h2>Create New Campaign Plan</h2>
-      <div class="form-group">
-        <label>Campaign Name</label>
-        <input type="text" [(ngModel)]="newCmpName" placeholder="e.g. Q4 Black Friday Growth Push" />
-      </div>
-      <div class="form-group">
-        <label>Objective</label>
-        <select [(ngModel)]="newCmpObjective">
-          <option value="LEAD_GENERATION">Lead Generation</option>
-          <option value="BRAND_AWARENESS">Brand Awareness</option>
-        </select>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Budget (₹)</label>
-          <input type="number" [(ngModel)]="newCmpBudget" />
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-backdrop" *ngIf="deleteConfirmTarget()" (click)="cancelDelete()">
+    <div class="modal-card modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header header-danger">
+        <div class="modal-title-wrap">
+          <span class="material-symbols-outlined text-danger">warning</span>
+          <h2>Delete Campaign</h2>
         </div>
-        <div class="form-group">
-          <label>Target Leads</label>
-          <input type="number" [(ngModel)]="newCmpTargetLeads" />
-        </div>
+        <button class="btn-close-modal" (click)="cancelDelete()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
       </div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" (click)="closeModal()">Cancel</button>
-        <button class="btn btn-primary" (click)="createCampaign()">Save Campaign</button>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong>{{ deleteConfirmTarget()?.name }}</strong>?</p>
+        <p class="text-subtle text-sm">This action cannot be undone and will remove all associated campaign metrics.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="cancelDelete()">Cancel</button>
+        <button class="btn btn-danger" (click)="executeDelete()">
+          <span class="material-symbols-outlined">delete_forever</span>
+          Delete Campaign
+        </button>
       </div>
     </div>
   </div>

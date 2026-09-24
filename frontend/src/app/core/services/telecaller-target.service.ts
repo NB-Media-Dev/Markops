@@ -76,8 +76,25 @@ export class TelecallerTargetService {
     }
   }
 
-  loadTargets(): void {
+  async loadTargets(): Promise<void> {
     if (!this.isBrowser) return;
+    try {
+      const res = await safeFetch('/api/telecaller-targets/common');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data.dailyCallsTarget === 'number') {
+          this._commonTarget.set(data);
+          this.syncTargetsWithCommon(data.dailyCallsTarget, data.dailyInterestedTarget, data.updatedBy);
+          try {
+            localStorage.setItem(this.COMMON_TARGET_KEY, JSON.stringify(data));
+          } catch {}
+          return;
+        }
+      }
+    } catch (err) {
+      console.log('Using cached telecaller targets:', err);
+    }
+
     try {
       const cachedCommon = localStorage.getItem(this.COMMON_TARGET_KEY);
       if (cachedCommon) {
@@ -151,6 +168,12 @@ export class TelecallerTargetService {
       } catch (e) {
         console.error('Error saving common target to storage:', e);
       }
+
+      safeFetch('/api/telecaller-targets/common', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedCommon),
+      }).catch((e) => console.log('Error syncing target to backend:', e));
     }
   }
 

@@ -1,10 +1,10 @@
 <div class="mo-login-container">
-  <!-- Left Side: Enterprise Navy Brand & Operations Briefing -->
+  <!-- Left Side: Enterprise Brand & Operations Briefing -->
   <aside class="mo-login-banner">
     <div class="mo-banner-header">
       <div class="mo-brand-mark">
         <div class="mo-brand-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
           </svg>
         </div>
@@ -14,18 +14,8 @@
 
     <div class="mo-banner-body">
       <h1 class="mo-banner-heading">
-        Marketing Operations &<br>Performance Management
+        Marketing Operations &<br>Creative Performance
       </h1>
-
-      <!-- Traceability Lifecycle Chain -->
-
-
-      <!-- Key Security Standards -->
-    </div>
-
-    <div class="mo-banner-footer">
-      <div class="status-indicator">
-      </div>
     </div>
   </aside>
 
@@ -35,8 +25,10 @@
 
       <!-- Card Header -->
       <header class="mo-card-header">
-        <h2 class="mo-card-title">Sign in to MarkOps Workspace</h2>
+        <h2 class="mo-card-title">Sign in to MarkOps</h2>
+        <p class="mo-card-subtitle">Enter your credentials to access your workspace</p>
       </header>
+
       <!-- Global Auth Error Alert -->
       @if (authService.authError()) {
         <div class="mo-alert mo-alert-danger" role="alert">
@@ -50,15 +42,15 @@
       <!-- Production Authentication Form -->
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="mo-login-form" novalidate>
 
-        <!-- Administrator Email Field -->
+        <!-- Email Field -->
         <div class="form-group">
-          <label for="email">Email</label>
+          <label for="email">Email Address</label>
           <div class="input-wrapper">
             <input
               id="email"
               type="email"
               formControlName="email"
-              placeholder="admin@markops.io"
+              placeholder="name@markops.io"
               autocomplete="email"
               [class.is-invalid]="loginSubmitted() && loginForm.get('email')?.invalid"
             />
@@ -88,7 +80,7 @@
               id="password"
               [type]="showPassword() ? 'text' : 'password'"
               formControlName="password"
-              placeholder="Enter password"
+              placeholder="Enter your password"
               autocomplete="current-password"
               [class.is-invalid]="loginSubmitted() && loginForm.get('password')?.invalid"
             />
@@ -127,22 +119,20 @@
         <!-- Submit Button -->
         <button
           type="submit"
-          class="btn-primary mo-submit-btn"
+          class="mo-submit-btn"
           [disabled]="authService.isLoading()"
         >
           @if (authService.isLoading()) {
             <span class="spinner"></span>
-            <span>Authenticating User...</span>
+            <span>Authenticating...</span>
           } @else {
-            <span>Sign In to Dashboard Workspace</span>
+            <span>Sign In to Dashboard</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
             </svg>
           }
         </button>
       </form>
-
-      <!-- Footer Compliance Note -->
     </div>
   </main>
 </div>

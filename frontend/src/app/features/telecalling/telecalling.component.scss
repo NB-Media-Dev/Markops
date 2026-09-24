@@ -1,5 +1,4 @@
 .telecalling-page {
-  padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -7,21 +6,23 @@
 
 .page-header {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 1rem;
 
   h1 {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #0f172a;
+    font-family: var(--mo-font-serif);
+    font-size: 2.15rem;
+    font-weight: 600;
+    color: var(--mo-text-main);
+    letter-spacing: -0.015em;
     margin: 0 0 0.25rem 0;
   }
 
   .subtitle {
-    color: #64748b;
-    font-size: 0.9rem;
+    color: var(--mo-text-muted);
+    font-size: 0.875rem;
     margin: 0;
   }
 
@@ -29,21 +30,21 @@
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    background: #ffffff;
-    padding: 0.5rem 0.9rem;
-    border-radius: 20px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    background: #FFFFFF;
+    padding: 0.45rem 1rem;
+    border-radius: var(--mo-radius-pill);
+    border: 1px solid var(--mo-sand-200);
+    box-shadow: var(--mo-shadow-xs);
 
     .user-name {
-      font-weight: 700;
-      color: #0f172a;
-      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--mo-text-main);
+      font-size: 0.85rem;
       display: block;
     }
     .user-role {
-      font-size: 0.75rem;
-      color: #64748b;
+      font-size: 0.72rem;
+      color: var(--mo-text-muted);
       display: block;
     }
   }

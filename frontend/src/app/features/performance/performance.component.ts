@@ -82,7 +82,8 @@ export class PerformanceComponent implements OnInit {
     ];
 
     return list.map((d) => {
-      const dTasks = tasks.filter((t) => t.assignedTo === d.id || t.assigneeName === d.fullName);
+      const dIdStr = String(d.id);
+      const dTasks = tasks.filter((t) => String(t.assignedTo) === dIdStr || String(t.assigneeName) === String(d.fullName));
       const inProgress = dTasks.filter((t) => t.status === 'IN_PROGRESS' || t.status === 'ACCEPTED').length;
       const submittedWaiting = dTasks.filter((t) => t.status === 'SUBMITTED' || t.status === 'RESUBMITTED' || t.status === 'UNDER_REVIEW').length;
       const revisionsRequired = dTasks.filter((t) => t.status === 'REVISION_REQUIRED').length;

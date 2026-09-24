@@ -43,6 +43,7 @@ export const ROLE_SIDEBAR_MENU: Record<UserRole, NavMenuItem[]> = {
   ],
   DIGITAL_MARKETING: [
     { label: 'Dashboard', route: '/dashboard', icon: 'dashboard' },
+    { label: 'Package Works', route: '/package-works', icon: 'inventory_2' },
     { label: 'Lead Upload & Assign', route: '/leads', icon: 'leads', badge: 'Excel', badgeType: 'primary' },
     { label: 'Telecalling Overview', route: '/telecalling', icon: 'telecalling' },
     { label: 'Campaigns', route: '/campaigns', icon: 'campaigns' },
@@ -64,6 +65,12 @@ export const ROLE_SIDEBAR_MENU: Record<UserRole, NavMenuItem[]> = {
     { label: 'Follow-ups', route: '/follow-ups', icon: 'follow-ups' },
     { label: 'Qualification', route: '/qualification', icon: 'qualification' },
     { label: 'Outcomes', route: '/outcomes', icon: 'outcomes' },
+  ],
+  BDM: [
+    { label: 'Package Works', route: '/package-works', icon: 'inventory_2' },
+    { label: 'Tasks', route: '/tasks', icon: 'tasks' },
+    { label: 'Designers', route: '/designers', icon: 'designers' },
+    { label: 'Notifications', route: '/notifications', icon: 'notifications' },
   ],
 };
 
@@ -119,6 +126,20 @@ export class MainLayoutComponent {
 
   closeNotificationFlyout(): void {
     this.isNotificationFlyoutOpen.set(false);
+  }
+
+  onNotificationClick(item: any): void {
+    this.closeNotificationFlyout();
+    this.notifService.handleNotificationClick(item);
+  }
+
+  onToastClick(toast: any): void {
+    this.notifService.handleNotificationClick(toast);
+  }
+
+  onToastClose(event: Event): void {
+    event.stopPropagation();
+    this.notifService.closeToast();
   }
 
   logout(): void {

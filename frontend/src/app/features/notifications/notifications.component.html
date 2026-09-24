@@ -1,27 +1,56 @@
 <div class="notifications-page">
   <header class="page-header">
     <div>
-      <h1>Realtime Operational Alerts</h1>
-      <p class="subtitle">System notifications for creative task status changes, lead qualifications, and campaign events</p>
+      <h1>System & Operations Notifications</h1>
+      <p class="subtitle">Real-time alerts for creative tasks, assignments, change requests, and campaigns. Click any alert to open the relevant workspace.</p>
     </div>
     <button class="btn btn-secondary" *ngIf="notifService.unreadCount() > 0" (click)="notifService.markAllAsRead()">
+      <span class="material-symbols-outlined icon-xs">done_all</span>
       Mark All as Read
     </button>
   </header>
 
   <div class="notifications-list">
-    <div class="notif-card" *ngFor="let item of notifService.notifications()" [class.unread]="!item.isRead">
-      <div class="notif-header">
-        <span class="notif-title">{{ item.title }}</span>
-        <span class="notif-time">{{ item.createdAt | date:'short' }}</span>
-      </div>
-      <p class="notif-body">{{ item.message }}</p>
-      <div class="notif-footer" *ngIf="!item.isRead">
-        <button class="btn btn-sm btn-outline" (click)="notifService.markAsRead(item.id)">Mark as Read</button>
+    <div
+      class="notif-card"
+      *ngFor="let item of notifService.notifications()"
+      [class.unread]="!item.isRead"
+      (click)="onNotificationClick(item)"
+      title="Click to navigate to relevant workspace"
+    >
+      <div class="notif-card-main">
+        <div class="notif-type-icon" [ngClass]="item.type.toLowerCase()">
+          @switch (item.type) {
+            @case ('SUCCESS') { <span class="material-symbols-outlined">check_circle</span> }
+            @case ('WARNING') { <span class="material-symbols-outlined">warning</span> }
+            @case ('ALERT') { <span class="material-symbols-outlined">bolt</span> }
+            @default { <span class="material-symbols-outlined">notifications_active</span> }
+          }
+        </div>
+
+        <div class="notif-content-area">
+          <div class="notif-header">
+            <div class="title-with-badge">
+              <span class="notif-title">{{ item.title }}</span>
+              <span class="unread-dot" *ngIf="!item.isRead">New</span>
+            </div>
+            <span class="notif-time">{{ item.createdAt | date:'medium' }}</span>
+          </div>
+
+          <p class="notif-body">{{ item.message }}</p>
+
+          <div class="notif-action-row">
+            <span class="open-link-label">
+              <span>Open Related Page</span>
+              <span class="material-symbols-outlined fs-16">arrow_forward</span>
+            </span>
+          </div>
+        </div>
       </div>
     </div>
 
     <div *ngIf="notifService.notifications().length === 0" class="empty-state">
+      <span class="material-symbols-outlined empty-icon">notifications_off</span>
       <p>No notifications found.</p>
     </div>
   </div>

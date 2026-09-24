@@ -1,59 +1,386 @@
-<div class="ads-page">
-  <header class="page-header">
+<div class="ads-page" [class.embedded-view]="embedded">
+  <!-- Standalone Page Header -->
+  <header class="page-header" *ngIf="!embedded">
     <div>
-      <h1>Digital Ad Account Operations</h1>
-      <p class="subtitle">Ad performance, spend, impressions, CTR, CPC, and conversion analytics</p>
+      <h1 class="page-title">Digital Ad Metrics & Accounts</h1>
+      <p class="subtitle">Ad level spend tracking, impressions, CTR, CPC, and direct lead generation metrics</p>
     </div>
     <div class="header-actions">
-      <button class="btn btn-primary" [disabled]="syncing()" (click)="refreshAds()">
-        <span class="material-symbols-outlined" [class.spinning]="syncing()">refresh</span>
-        {{ syncing() ? 'Refreshing...' : 'Refresh Ad Metrics' }}
+      <button class="btn btn-secondary" [disabled]="syncing()" (click)="syncAdAccounts()">
+        <span class="material-symbols-outlined" [class.spinning]="syncing()">sync</span>
+        {{ syncing() ? 'Syncing...' : 'Sync Ad Accounts' }}
+      </button>
+      <button class="btn btn-primary" (click)="openCreateModal()">
+        <span class="material-symbols-outlined">add_chart</span>
+        Add Ad Metric
       </button>
     </div>
   </header>
-  <div class="alert alert-success" *ngIf="syncMessage()">
-    <span class="material-symbols-outlined">check_circle</span>
-    {{ syncMessage() }}
+
+  <!-- Embedded Subheader -->
+  <div class="embedded-header-row" *ngIf="embedded">
+    <div>
+      <h3 class="embedded-title">
+        <span class="material-symbols-outlined text-forest fs-20">ads_click</span>
+        {{ packageFilter ? packageFilter + ' Ad Metrics' : 'Package Ad Metrics' }}
+      </h3>
+      <p class="embedded-subtitle">Ad level spend tracking, platform channels, CTR, and lead attribution</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-secondary btn-sm" [disabled]="syncing()" (click)="syncAdAccounts()">
+        <span class="material-symbols-outlined fs-16" [class.spinning]="syncing()">sync</span>
+        {{ syncing() ? 'Syncing...' : 'Sync Ads' }}
+      </button>
+      <button class="btn btn-primary btn-sm" (click)="openCreateModal()">
+        <span class="material-symbols-outlined fs-16">add_chart</span>
+        Add Ad Metric
+      </button>
+    </div>
   </div>
 
+  <!-- Flash Messages -->
+  <div class="alert alert-success" *ngIf="successMessage()">
+    <span class="material-symbols-outlined">check_circle</span>
+    {{ successMessage() }}
+  </div>
+
+  <div class="alert alert-danger" *ngIf="errorMessage()">
+    <span class="material-symbols-outlined">error</span>
+    {{ errorMessage() }}
+  </div>
+
+  <!-- KPI Summary Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap icon-spend">
+        <span class="material-symbols-outlined">monetization_on</span>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Total Ad Spend</span>
+        <span class="kpi-value">₹{{ totalSpend() | number:'1.2-2' }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap icon-leads">
+        <span class="material-symbols-outlined">contacts</span>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Total Leads</span>
+        <span class="kpi-value">{{ totalLeads() | number }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap icon-cpl">
+        <span class="material-symbols-outlined">price_check</span>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Average CPL</span>
+        <span class="kpi-value">₹{{ averageCpl() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap icon-ctr">
+        <span class="material-symbols-outlined">touch_app</span>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Average CTR</span>
+        <span class="kpi-value">{{ averageCtr() }}%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Search Toolbar -->
+  <div class="toolbar-card">
+    <div class="search-box">
+      <span class="material-symbols-outlined">search</span>
+      <input
+        type="text"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+        placeholder="Search ad name, campaign, or platform..."
+      />
+    </div>
+
+    <div class="filter-group">
+      <label>Platform:</label>
+      <select [ngModel]="filterPlatform()" (ngModelChange)="filterPlatform.set($event)">
+        <option value="ALL">All Platforms</option>
+        <option value="Meta">Meta</option>
+        <option value="Google Ads">Google Ads</option>
+        <option value="Instagram">Instagram</option>
+        <option value="LinkedIn">LinkedIn</option>
+        <option value="YouTube">YouTube</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Primary Ads Table -->
   <div class="table-card">
     <div class="table-responsive">
       <table class="data-table">
         <thead>
           <tr>
-            <th>Ad Name</th>
+            <th>Ad</th>
             <th>Campaign</th>
             <th>Platform</th>
             <th>Status</th>
             <th>Spend</th>
-            <th>Impressions</th>
-            <th>Clicks</th>
-            <th>CTR</th>
-            <th>CPC</th>
             <th>Leads</th>
             <th>CPL</th>
-            <th>Last Synced</th>
+            <th>CTR</th>
+            <th class="text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let ad of ads()">
-            <td class="font-bold">{{ ad.name }}</td>
-            <td>{{ ad.campaignName }}</td>
+          <tr *ngFor="let ad of filteredAds" class="table-row-hover">
+            <!-- Ad Name & ID -->
             <td>
-              <span class="platform-badge">{{ ad.platform }}</span>
+              <div class="ad-identity">
+                <span class="ad-name">{{ ad.name }}</span>
+                <span class="ad-sub">{{ ad.platformAdId || ('ID: ' + ad.id) }}</span>
+              </div>
             </td>
-            <td><span class="badge badge-success">{{ ad.status }}</span></td>
-            <td class="font-bold">₹{{ ad.spend | number:'1.2-2' }}</td>
-            <td>{{ ad.impressions | number }}</td>
-            <td>{{ ad.clicks | number }}</td>
-            <td>{{ ad.ctr }}%</td>
-            <td>₹{{ ad.cpc }}</td>
-            <td class="font-bold text-blue">{{ ad.leadsCount }}</td>
-            <td>₹{{ ad.cpl }}</td>
-            <td class="text-subtle">{{ ad.lastSyncedAt | date:'shortTime' }}</td>
+
+            <!-- Campaign -->
+            <td>
+              <span class="campaign-tag">{{ ad.campaignName }}</span>
+            </td>
+
+            <!-- Platform -->
+            <td>
+              <span
+                class="platform-pill"
+                [ngClass]="{
+                  'platform-meta': ad.platform === 'Meta',
+                  'platform-google': ad.platform === 'Google Ads',
+                  'platform-instagram': ad.platform === 'Instagram',
+                  'platform-linkedin': ad.platform === 'LinkedIn',
+                  'platform-youtube': ad.platform === 'YouTube'
+                }"
+              >
+                {{ ad.platform }}
+              </span>
+            </td>
+
+            <!-- Status -->
+            <td>
+              <span
+                class="badge"
+                [ngClass]="{
+                  'badge-success': ad.status === 'ACTIVE',
+                  'badge-blue': ad.status === 'PAUSED',
+                  'badge-neutral': ad.status === 'COMPLETED' || ad.status === 'DRAFT'
+                }"
+              >
+                {{ ad.status }}
+              </span>
+            </td>
+
+            <!-- Spend -->
+            <td class="font-bold text-navy">₹{{ ad.spend | number:'1.2-2' }}</td>
+
+            <!-- Leads -->
+            <td>
+              <span class="pill-count">{{ ad.leadsCount | number }}</span>
+            </td>
+
+            <!-- CPL -->
+            <td class="font-bold text-teal">₹{{ ad.cpl | number:'1.2-2' }}</td>
+
+            <!-- CTR -->
+            <td>
+              <span class="ctr-badge">{{ ad.ctr }}%</span>
+            </td>
+
+            <!-- Actions -->
+            <td class="text-right actions-col">
+              <div class="action-buttons-group">
+                <button
+                  class="btn-icon-action btn-edit"
+                  (click)="openEditModal(ad)"
+                  title="Edit Ad Metric"
+                >
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button
+                  class="btn-icon-action btn-delete"
+                  (click)="confirmDelete(ad)"
+                  title="Delete Ad Metric"
+                >
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngIf="filteredAds.length === 0">
+            <td colspan="9" class="empty-state-cell">
+              <div class="empty-state-box">
+                <span class="material-symbols-outlined empty-icon">ads_click</span>
+                <p class="empty-title">No ad metrics found</p>
+                <p class="empty-subtitle">Create a new ad performance record to get started.</p>
+                <button class="btn btn-primary btn-sm" (click)="openCreateModal()">
+                  <span class="material-symbols-outlined">add</span> Add Ad Metric
+                </button>
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Create / Edit Modal -->
+  <div class="modal-backdrop" *ngIf="showModal()" (click)="closeModal()">
+    <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="material-symbols-outlined title-icon">{{ isEditing() ? 'edit_note' : 'add_chart' }}</span>
+          <h2>{{ isEditing() ? 'Edit Ad Metric' : 'Create Ad Metric Record' }}</h2>
+        </div>
+        <button class="btn-close-modal" (click)="closeModal()" aria-label="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group flex-2">
+            <label>Ad Name <span class="required">*</span></label>
+            <input
+              type="text"
+              [(ngModel)]="formModel.name"
+              placeholder="e.g. Meta - Luxury Carousel Promo v2"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group flex-1">
+            <label>Platform</label>
+            <select [(ngModel)]="formModel.platform" class="form-input">
+              <option value="Meta">Meta</option>
+              <option value="Google Ads">Google Ads</option>
+              <option value="Instagram">Instagram</option>
+              <option value="LinkedIn">LinkedIn</option>
+              <option value="YouTube">YouTube</option>
+            </select>
+          </div>
+
+          <div class="form-group flex-1">
+            <label>Status</label>
+            <select [(ngModel)]="formModel.status" class="form-input">
+              <option value="ACTIVE">Active</option>
+              <option value="PAUSED">Paused</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="DRAFT">Draft</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-2">
+            <label>Campaign Association</label>
+            <select
+              [ngModel]="formModel.campaignId"
+              (ngModelChange)="onCampaignSelected($event)"
+              class="form-input"
+            >
+              <option value="">-- Select Campaign --</option>
+              <option *ngFor="let cmp of campaignService.campaigns()" [value]="cmp.id">
+                {{ cmp.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group flex-1">
+            <label>Platform Ad ID</label>
+            <input
+              type="text"
+              [(ngModel)]="formModel.platformAdId"
+              placeholder="e.g. ad_ext_492019"
+              class="form-input"
+            />
+          </div>
+        </div>
+
+        <!-- Performance Metrics Section -->
+        <div class="section-divider">
+          <span>Spend & Engagement Metrics</span>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Spend (₹)</label>
+            <input type="number" [(ngModel)]="formModel.spend" min="0" class="form-input" />
+          </div>
+
+          <div class="form-group flex-1">
+            <label>Leads Generated</label>
+            <input type="number" [(ngModel)]="formModel.leadsCount" min="0" class="form-input" />
+          </div>
+
+          <div class="form-group flex-1">
+            <label>Impressions</label>
+            <input type="number" [(ngModel)]="formModel.impressions" min="0" class="form-input" />
+          </div>
+
+          <div class="form-group flex-1">
+            <label>Clicks</label>
+            <input type="number" [(ngModel)]="formModel.clicks" min="0" class="form-input" />
+          </div>
+        </div>
+
+        <!-- Auto Computed Metrics Badges -->
+        <div class="live-calc-panel">
+          <div class="calc-item">
+            <span class="calc-label">Auto-Computed CPL</span>
+            <span class="calc-val">₹{{ computedModalCpl }}</span>
+            <span class="calc-formula">(Spend / Leads)</span>
+          </div>
+          <div class="calc-item">
+            <span class="calc-label">Auto-Computed CTR</span>
+            <span class="calc-val">{{ computedModalCtr }}%</span>
+            <span class="calc-formula">(Clicks / Impressions * 100)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="saveAd()">
+          <span class="material-symbols-outlined">save</span>
+          {{ isEditing() ? 'Update Ad Metric' : 'Save Ad Metric' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-backdrop" *ngIf="deleteConfirmTarget()" (click)="cancelDelete()">
+    <div class="modal-card modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header header-danger">
+        <div class="modal-title-wrap">
+          <span class="material-symbols-outlined text-danger">warning</span>
+          <h2>Delete Ad Record</h2>
+        </div>
+        <button class="btn-close-modal" (click)="cancelDelete()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong>{{ deleteConfirmTarget()?.name }}</strong>?</p>
+        <p class="text-subtle text-sm">This will remove the ad performance history for this item.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="cancelDelete()">Cancel</button>
+        <button class="btn btn-danger" (click)="executeDelete()">
+          <span class="material-symbols-outlined">delete_forever</span>
+          Delete Ad
+        </button>
+      </div>
     </div>
   </div>
 </div>

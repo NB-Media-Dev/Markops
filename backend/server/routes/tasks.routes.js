@@ -5,6 +5,78 @@ const { emitRealtimeEvent } = require('../events');
 
 const router = express.Router();
 
+function formatDueDate(val) {
+  if (!val) return '';
+  if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val.trim())) return val.trim();
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return '';
+    return d.toISOString().split('T')[0];
+  } catch (e) {
+    return '';
+  }
+}
+
+async function findTask(taskId) {
+  if (taskId === undefined || taskId === null) return null;
+  const targetIdStr = String(taskId).trim();
+  
+  let task = dbTasksStore.find((t) => String(t.id).trim() === targetIdStr);
+  if (task) return task;
+
+  if (dbPool) {
+    try {
+      const [rows] = await dbPool.query(`
+        SELECT t.*, u.full_name as assignee_full_name, c.full_name as creator_full_name, COALESCE(cr.code, 'ADMINISTRATOR') as creator_role
+        FROM tasks t
+        LEFT JOIN users u ON t.assigned_to = u.id
+        LEFT JOIN users c ON t.created_by = c.id
+        LEFT JOIN roles cr ON c.role_id = cr.id
+        WHERE t.id = ?
+        LIMIT 1
+      `, [taskId]);
+      
+      if (Array.isArray(rows) && rows.length > 0) {
+        const row = rows[0];
+        const safeDueDate = formatDueDate(row.due_date);
+        const detectedRole = row.creator_role || (row.creator_full_name && row.creator_full_name.toLowerCase().includes('bdm') ? 'BDM' : 'ADMINISTRATOR');
+        
+        task = {
+          id: row.id,
+          title: row.title || 'Untitled Task',
+          packageName: row.package_name || '',
+          description: row.description || '',
+          content: row.content || '',
+          attachmentUrl: row.attachment_url || '',
+          attachmentName: row.attachment_name || '',
+          reviewerFeedback: row.reviewer_feedback || '',
+          status: row.status || 'ASSIGNED',
+          priority: row.priority || 'MEDIUM',
+          createdBy: row.created_by || 1,
+          creatorName: row.creator_full_name || 'Manager',
+          creatorRole: detectedRole,
+          assignedTo: row.assigned_to || '',
+          assigneeName: row.assignee_full_name || 'Designer',
+          dueDate: safeDueDate,
+          progressPercent: row.status === 'APPROVED' || row.status === 'COMPLETED' ? 100 : (row.status === 'IN_PROGRESS' ? 50 : 10),
+          createdAt: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
+          updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : new Date().toISOString(),
+          versions: [],
+          statusHistory: [],
+          comments: [],
+        };
+        dbTasksStore.push(task);
+        saveTasksToFile(dbTasksStore);
+        return task;
+      }
+    } catch (e) {
+      console.error('[MySQL DB Error] findTask failed:', e?.message || e);
+    }
+  }
+
+  return null;
+}
+
 // GET /api/tasks - Retrieve task list with status/assignee filters
 router.get('/tasks', async (req, res) => {
   const { status, assignedTo } = req.query;
@@ -12,19 +84,23 @@ router.get('/tasks', async (req, res) => {
   if (dbPool) {
     try {
       const [rows] = await dbPool.query(`
-        SELECT t.*, u.full_name as assignee_full_name, c.full_name as creator_full_name
+        SELECT t.*, u.full_name as assignee_full_name, c.full_name as creator_full_name, COALESCE(cr.code, 'ADMINISTRATOR') as creator_role
         FROM tasks t
         LEFT JOIN users u ON t.assigned_to = u.id
         LEFT JOIN users c ON t.created_by = c.id
+        LEFT JOIN roles cr ON c.role_id = cr.id
         ORDER BY t.created_at DESC
       `);
       if (Array.isArray(rows)) {
         for (const row of rows) {
-          const existing = dbTasksStore.find((t) => t.id === row.id);
+          const existing = dbTasksStore.find((t) => String(t.id) === String(row.id));
+          const safeDueDate = formatDueDate(row.due_date);
+          const detectedRole = row.creator_role || (row.creator_full_name && row.creator_full_name.toLowerCase().includes('bdm') ? 'BDM' : 'ADMINISTRATOR');
           if (!existing) {
             dbTasksStore.push({
               id: row.id,
               title: row.title,
+              packageName: row.package_name || '',
               description: row.description || '',
               content: row.content || '',
               attachmentUrl: row.attachment_url || '',
@@ -34,9 +110,10 @@ router.get('/tasks', async (req, res) => {
               priority: row.priority,
               createdBy: row.created_by,
               creatorName: row.creator_full_name || 'Manager',
+              creatorRole: detectedRole,
               assignedTo: row.assigned_to || '',
               assigneeName: row.assignee_full_name || 'Designer',
-              dueDate: row.due_date ? String(row.due_date).split('T')[0] : '',
+              dueDate: safeDueDate,
               progressPercent: row.status === 'APPROVED' || row.status === 'COMPLETED' ? 100 : (row.status === 'IN_PROGRESS' ? 50 : 10),
               createdAt: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
               updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : new Date().toISOString(),
@@ -48,6 +125,8 @@ router.get('/tasks', async (req, res) => {
             existing.status = row.status;
             if (row.assignee_full_name) existing.assigneeName = row.assignee_full_name;
             if (row.creator_full_name) existing.creatorName = row.creator_full_name;
+            if (detectedRole && !existing.creatorRole) existing.creatorRole = detectedRole;
+            if (safeDueDate) existing.dueDate = safeDueDate;
           }
         }
         saveTasksToFile(dbTasksStore);
@@ -63,26 +142,26 @@ router.get('/tasks', async (req, res) => {
     filtered = filtered.filter((t) => t.status === status);
   }
   if (assignedTo) {
-    filtered = filtered.filter((t) => t.assignedTo === assignedTo);
+    filtered = filtered.filter((t) => String(t.assignedTo) === String(assignedTo));
   }
 
   return res.json(filtered);
 });
 
 // GET /api/tasks/:id - Retrieve single task detail with versions, history, and comments
-router.get('/tasks/:id', (req, res) => {
-  const task = dbTasksStore.find((t) => t.id === req.params.id);
+router.get('/tasks/:id', async (req, res) => {
+  const task = await findTask(req.params.id);
   if (!task) {
     return res.status(404).json({ error: 'Task record not found.' });
   }
   return res.json(task);
 });
 
-// POST /api/tasks - Manager Task Creation flow
+// POST /api/tasks - Manager & BDM Task Creation flow
 router.post('/tasks', async (req, res) => {
-  const userRole = req.headers['x-user-role'] || req.body.creatorRole;
-  if (userRole === 'DESIGNER') {
-    return res.status(403).json({ error: 'Permission Denied: Only Marketing Managers and Administrators can create and assign tasks.' });
+  const userRole = String(req.headers['x-user-role'] || req.body.creatorRole || '').toUpperCase();
+  if (userRole && !['ADMINISTRATOR', 'MARKETING_MANAGER', 'BDM'].includes(userRole)) {
+    return res.status(403).json({ error: 'Permission Denied: Only Admin, Marketing Manager, and BDM can create tasks.' });
   }
 
   const { title, description, content, attachmentUrl, attachmentName, campaignId, campaignName, priority, assignedTo, dueDate, creatorId, creatorName, creatorEmail, packageName } = req.body;
@@ -93,7 +172,7 @@ router.post('/tasks', async (req, res) => {
   const taskId = `task_${Math.random().toString(36).substring(2, 11)}`;
   const now = new Date().toISOString();
 
-  const targetUser = dbUsersStore.find((u) => u.id === assignedTo);
+  const targetUser = dbUsersStore.find((u) => String(u.id) === String(assignedTo));
   const assigneeName = targetUser ? targetUser.fullName : (req.body.assigneeName || 'Assigned User');
 
   const newTask = {
@@ -110,6 +189,7 @@ router.post('/tasks', async (req, res) => {
     priority: String(priority),
     createdBy: creatorId || req.headers['x-user-id'] || 'usr_admin_01',
     creatorName: creatorName || req.headers['x-user-name'] || 'System Administrator',
+    creatorRole: userRole || 'ADMINISTRATOR',
     assignedTo: assignedTo || '',
     assigneeName,
     progressPercent: 0,
@@ -152,21 +232,18 @@ router.post('/tasks', async (req, res) => {
 
   if (dbPool) {
     try {
+      const numericCreatorId = typeof newTask.createdBy === 'number' ? newTask.createdBy : (parseInt(newTask.createdBy, 10) || 1);
+      const numericAssignedTo = typeof newTask.assignedTo === 'number' ? newTask.assignedTo : (parseInt(newTask.assignedTo, 10) || null);
       await dbPool.query(
-        `INSERT INTO tasks (id, title, description, content, attachment_url, attachment_name, status, priority, created_by, assigned_to, due_date, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-         ON DUPLICATE KEY UPDATE status = VALUES(status), updated_at = NOW()`,
+        `INSERT INTO tasks (title, description, status, priority, created_by, assigned_to, due_date, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
         [
-          newTask.id,
           newTask.title,
-          newTask.description || null,
-          newTask.content || null,
-          newTask.attachmentUrl || null,
-          newTask.attachmentName || null,
+          newTask.description || newTask.content || null,
           newTask.status,
           newTask.priority,
-          newTask.createdBy,
-          newTask.assignedTo || null,
+          numericCreatorId,
+          numericAssignedTo,
           newTask.dueDate || null,
         ]
       );
@@ -189,14 +266,14 @@ router.post('/tasks', async (req, res) => {
   return res.status(201).json(newTask);
 });
 
-// POST /api/tasks/:id/status - Status Transition State Machine
-router.post('/tasks/:id/status', async (req, res) => {
+// Status Transition Handler
+async function handleStatusTransition(req, res) {
   const { status, remark, actorId, actorName, actorEmail } = req.body;
   const taskId = req.params.id;
 
-  const task = dbTasksStore.find((t) => t.id === taskId);
+  const task = await findTask(taskId);
   if (!task) {
-    return res.status(404).json({ error: 'Task not found.' });
+    return res.status(404).json({ error: `Task #${taskId} not found.` });
   }
 
   const previousStatus = task.status;
@@ -264,15 +341,19 @@ router.post('/tasks/:id/status', async (req, res) => {
 
   if (dbPool) {
     try {
-      await dbPool.query(
-        `UPDATE tasks SET status = ?, reviewer_feedback = ?, updated_at = NOW() WHERE id = ?`,
-        [newStatus, remark || null, taskId]
-      );
-      await dbPool.query(
-        `INSERT INTO task_status_history (id, task_id, actor_id, previous_status, new_status, remark, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-        [historyEntry.id, taskId, historyEntry.actorId, previousStatus, newStatus, remark || null]
-      );
+      const numericTaskId = typeof taskId === 'number' ? taskId : (parseInt(taskId, 10) || null);
+      const numericActorId = typeof effectiveActorId === 'number' ? effectiveActorId : (parseInt(effectiveActorId, 10) || 1);
+      if (numericTaskId) {
+        await dbPool.query(
+          `UPDATE tasks SET status = ?, reviewer_feedback = ?, updated_at = NOW() WHERE id = ?`,
+          [newStatus, remark || null, numericTaskId]
+        );
+        await dbPool.query(
+          `INSERT INTO task_status_history (task_id, actor_id, previous_status, new_status, remark, created_at)
+           VALUES (?, ?, ?, ?, ?, NOW())`,
+          [numericTaskId, numericActorId, previousStatus, newStatus, remark || null]
+        );
+      }
     } catch (e) {
       console.error('[MySQL DB Error] Task status UPDATE failed:', e?.message || e);
     }
@@ -291,14 +372,19 @@ router.post('/tasks/:id/status', async (req, res) => {
   });
 
   return res.json(task);
-});
+}
+
+// POST /api/tasks/:id/status, PUT /api/tasks/:id/status, PATCH /api/tasks/:id/status
+router.post('/tasks/:id/status', handleStatusTransition);
+router.put('/tasks/:id/status', handleStatusTransition);
+router.patch('/tasks/:id/status', handleStatusTransition);
 
 // POST /api/tasks/:id/versions - Upload/Submit Creative Version
 router.post('/tasks/:id/versions', async (req, res) => {
   const { fileName, changelog, fileSize, filePath, fileContent, submittedBy, submittedByName, submittedByEmail } = req.body;
   const taskId = req.params.id;
 
-  const task = dbTasksStore.find((t) => t.id === taskId);
+  const task = await findTask(taskId);
   if (!task) {
     return res.status(404).json({ error: 'Task not found.' });
   }
@@ -361,7 +447,7 @@ router.post('/tasks/:id/versions', async (req, res) => {
     actorId: effectiveUser,
     actorEmail: submittedByEmail || 'admin@markops.io',
     action: 'TASK_VERSION_SUBMITTED',
-    entityType: 'TaskVersion',
+    entityType: 'Task',
     entityId: newVersion.id,
     newState: { versionNumber: newVersionNumber, fileName: newVersion.fileName },
     ipAddress: req.ip || req.socket.remoteAddress,
@@ -372,11 +458,11 @@ router.post('/tasks/:id/versions', async (req, res) => {
 });
 
 // POST /api/tasks/:id/comments - Add Comment / Reviewer Remark
-router.post('/tasks/:id/comments', (req, res) => {
+router.post('/tasks/:id/comments', async (req, res) => {
   const { comment, userId, userName, userRole } = req.body;
   const taskId = req.params.id;
 
-  const task = dbTasksStore.find((t) => t.id === taskId);
+  const task = await findTask(taskId);
   if (!task) {
     return res.status(404).json({ error: 'Task not found.' });
   }
@@ -404,14 +490,18 @@ router.post('/tasks/:id/comments', (req, res) => {
 
 // DELETE /api/tasks/:id - Delete Task Permanently
 router.delete('/tasks/:id', async (req, res) => {
-  const taskId = req.params.id;
-  const index = dbTasksStore.findIndex((t) => t.id === taskId);
-  if (index === -1) {
-    return res.status(404).json({ error: 'Task record not found.' });
+  const userRole = String(req.headers['x-user-role'] || req.query.role || '').toUpperCase();
+  if (userRole && !['ADMINISTRATOR', 'MARKETING_MANAGER', 'BDM'].includes(userRole)) {
+    return res.status(403).json({ error: 'Permission Denied: Only Admin, Marketing Manager, and BDM can delete tasks.' });
   }
 
-  const deletedTask = dbTasksStore.splice(index, 1)[0];
-  saveTasksToFile(dbTasksStore);
+  const taskId = req.params.id;
+  const index = dbTasksStore.findIndex((t) => String(t.id) === String(taskId));
+  let deletedTask = null;
+  if (index !== -1) {
+    deletedTask = dbTasksStore.splice(index, 1)[0];
+    saveTasksToFile(dbTasksStore);
+  }
 
   if (dbPool) {
     try {
@@ -422,6 +512,10 @@ router.delete('/tasks/:id', async (req, res) => {
     }
   }
 
+  if (!deletedTask && !dbPool) {
+    return res.status(404).json({ error: 'Task record not found.' });
+  }
+
   emitRealtimeEvent('task:deleted', { id: taskId });
   return res.json({ success: true, message: 'Task deleted successfully.', deletedTaskId: taskId });
 });
@@ -430,11 +524,11 @@ router.delete('/tasks/:id', async (req, res) => {
 router.get('/designer/dashboard-metrics', (req, res) => {
   const targetUserId = req.query.userId || req.headers['x-user-id'];
   const designerTasks = targetUserId
-    ? dbTasksStore.filter((t) => t.assignedTo === targetUserId)
+    ? dbTasksStore.filter((t) => String(t.assignedTo) === String(targetUserId))
     : dbTasksStore;
   const todayStr = new Date().toISOString().split('T')[0];
 
-  const assignedToday = designerTasks.filter((t) => t.createdAt.startsWith(todayStr) || t.status === 'ASSIGNED');
+  const assignedToday = designerTasks.filter((t) => (t.createdAt && t.createdAt.startsWith(todayStr)) || t.status === 'ASSIGNED');
   const inProgress = designerTasks.filter((t) => t.status === 'IN_PROGRESS' || t.status === 'ACCEPTED');
   const dueToday = designerTasks.filter((t) => t.dueDate === todayStr);
   const overdue = designerTasks.filter((t) => t.dueDate && t.dueDate < todayStr && t.status !== 'COMPLETED' && t.status !== 'APPROVED');

@@ -94,7 +94,7 @@ export class TaskManagementService {
    * Selects active task for detail view drawer / version upload modal
    */
   selectTask(taskId: string): void {
-    const found = this._tasks().find((t) => t.id === taskId);
+    const found = this._tasks().find((t) => String(t.id) === String(taskId));
     if (found) {
       this._selectedTask.set(found);
     }
@@ -192,6 +192,7 @@ export class TaskManagementService {
       priority: req.priority,
       createdBy: req.creatorId || 'usr_admin_01',
       creatorName: req.creatorName || 'System Administrator',
+      creatorRole: req.creatorRole || 'BDM',
       assignedTo: req.assignedTo || '',
       assigneeName: req.assigneeName || 'Assigned User',
       progressPercent: 0,
@@ -262,10 +263,10 @@ export class TaskManagementService {
 
   private updateTaskInSignal(updatedTask: Task): void {
     this._tasks.update((list) =>
-      list.map((t) => (t.id === updatedTask.id ? updatedTask : t))
+      list.map((t) => (String(t.id) === String(updatedTask.id) ? updatedTask : t))
     );
     this.saveToLocalStorage(this._tasks());
-    if (this._selectedTask()?.id === updatedTask.id) {
+    if (String(this._selectedTask()?.id) === String(updatedTask.id)) {
       this._selectedTask.set(updatedTask);
     }
   }

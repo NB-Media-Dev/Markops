@@ -3,6 +3,7 @@
 -- Target RDBMS: MySQL 8.0+ / MySQL Workbench
 -- Description: Full DDL script for 27 operational tables supporting 
 --              end-to-end marketing, design, ad sync, telecalling & revenue traceability.
+--              Primary keys and foreign keys use INT AUTO_INCREMENT.
 -- ============================================================================
 
 CREATE DATABASE IF NOT EXISTS `markops` 
@@ -18,10 +19,10 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- 1. SECURITY & ACCESS CONTROL MODULE
 -- ----------------------------------------------------------------------------
 
--- Roles table
+-- Roles table (Supports ADMINISTRATOR, MARKETING_MANAGER, DIGITAL_MARKETING, DESIGNER, TELECALLER, BDM)
 DROP TABLE IF EXISTS `roles`;
 CREATE TABLE `roles` (
-  `id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(50) NOT NULL,
   `code` VARCHAR(50) NOT NULL UNIQUE,
   `description` VARCHAR(255) DEFAULT NULL,
@@ -33,7 +34,7 @@ CREATE TABLE `roles` (
 -- Permissions table
 DROP TABLE IF EXISTS `permissions`;
 CREATE TABLE `permissions` (
-  `id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(100) NOT NULL,
   `code` VARCHAR(100) NOT NULL UNIQUE,
   `module` VARCHAR(50) NOT NULL,
@@ -45,8 +46,8 @@ CREATE TABLE `permissions` (
 -- Role to Permission mapping
 DROP TABLE IF EXISTS `role_permissions`;
 CREATE TABLE `role_permissions` (
-  `role_id` VARCHAR(36) NOT NULL,
-  `permission_id` VARCHAR(36) NOT NULL,
+  `role_id` INT NOT NULL,
+  `permission_id` INT NOT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`role_id`, `permission_id`),
   CONSTRAINT `fk_rp_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE,
@@ -56,10 +57,10 @@ CREATE TABLE `role_permissions` (
 -- Teams table
 DROP TABLE IF EXISTS `teams`;
 CREATE TABLE `teams` (
-  `id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(100) NOT NULL,
   `description` VARCHAR(255) DEFAULT NULL,
-  `manager_id` VARCHAR(36) DEFAULT NULL,
+  `manager_id` INT DEFAULT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
@@ -68,12 +69,12 @@ CREATE TABLE `teams` (
 -- Users table
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
-  `id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
   `email` VARCHAR(191) NOT NULL UNIQUE,
   `password_hash` VARCHAR(255) NOT NULL,
   `full_name` VARCHAR(100) NOT NULL,
-  `role_id` VARCHAR(36) NOT NULL,
-  `team_id` VARCHAR(36) DEFAULT NULL,
+  `role_id` INT NOT NULL,
+  `team_id` INT DEFAULT NULL,
   `department` VARCHAR(100) DEFAULT NULL,
   `is_active` TINYINT(1) NOT NULL DEFAULT 1,
   `last_login_at` DATETIME DEFAULT NULL,
@@ -93,7 +94,7 @@ CREATE TABLE `users` (
 -- Campaigns table
 DROP TABLE IF EXISTS `campaigns`;
 CREATE TABLE `campaigns` (
-  `id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(150) NOT NULL,
   `objective` VARCHAR(100) NOT NULL,
   `status` ENUM('PLANNING', 'ACTIVE', 'PAUSED', 'COMPLETED', 'ARCHIVED') NOT NULL DEFAULT 'PLANNING',
@@ -104,7 +105,7 @@ CREATE TABLE `campaigns` (
   `target_cpl` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   `target_qualified_pct` DECIMAL(5,2) NOT NULL DEFAULT 0.00,
   `target_conversion_pct` DECIMAL(5,2) NOT NULL DEFAULT 0.00,
-  `owner_id` VARCHAR(36) NOT NULL,
+  `owner_id` INT NOT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -116,7 +117,7 @@ CREATE TABLE `campaigns` (
 -- Meta connections table
 DROP TABLE IF EXISTS `meta_connections`;
 CREATE TABLE `meta_connections` (
-  `id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
   `account_name` VARCHAR(100) NOT NULL,
   `ad_account_id` VARCHAR(100) NOT NULL UNIQUE,
   `business_id` VARCHAR(100) DEFAULT NULL,
@@ -132,8 +133,8 @@ CREATE TABLE `meta_connections` (
 -- Meta sync logs table
 DROP TABLE IF EXISTS `meta_sync_logs`;
 CREATE TABLE `meta_sync_logs` (
-  `id` VARCHAR(36) NOT NULL,
-  `meta_connection_id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `meta_connection_id` INT NOT NULL,
   `sync_type` ENUM('MANUAL', 'SCHEDULED', 'WEBHOOK') NOT NULL DEFAULT 'SCHEDULED',
   `status` ENUM('SUCCESS', 'FAILED', 'PARTIAL') NOT NULL,
   `records_processed` INT NOT NULL DEFAULT 0,
@@ -148,9 +149,9 @@ CREATE TABLE `meta_sync_logs` (
 -- Ads table
 DROP TABLE IF EXISTS `ads`;
 CREATE TABLE `ads` (
-  `id` VARCHAR(36) NOT NULL,
-  `campaign_id` VARCHAR(36) NOT NULL,
-  `meta_connection_id` VARCHAR(36) DEFAULT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `campaign_id` INT NOT NULL,
+  `meta_connection_id` INT DEFAULT NULL,
   `platform_ad_id` VARCHAR(100) DEFAULT NULL,
   `platform_adset_id` VARCHAR(100) DEFAULT NULL,
   `platform_campaign_id` VARCHAR(100) DEFAULT NULL,
@@ -168,8 +169,8 @@ CREATE TABLE `ads` (
 -- Ad metrics snapshot table
 DROP TABLE IF EXISTS `ad_metrics`;
 CREATE TABLE `ad_metrics` (
-  `id` VARCHAR(36) NOT NULL,
-  `ad_id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `ad_id` INT NOT NULL,
   `spend` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   `impressions` BIGINT NOT NULL DEFAULT 0,
   `reach` BIGINT NOT NULL DEFAULT 0,
@@ -193,14 +194,14 @@ CREATE TABLE `ad_metrics` (
 -- Tasks table
 DROP TABLE IF EXISTS `tasks`;
 CREATE TABLE `tasks` (
-  `id` VARCHAR(36) NOT NULL,
-  `campaign_id` VARCHAR(36) DEFAULT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `campaign_id` INT DEFAULT NULL,
   `title` VARCHAR(150) NOT NULL,
   `description` TEXT DEFAULT NULL,
   `status` ENUM('DRAFT', 'ASSIGNED', 'ACCEPTED', 'IN_PROGRESS', 'SUBMITTED', 'UNDER_REVIEW', 'REVISION_REQUIRED', 'RESUBMITTED', 'APPROVED', 'PUBLISHED', 'COMPLETED') NOT NULL DEFAULT 'DRAFT',
   `priority` ENUM('LOW', 'MEDIUM', 'HIGH', 'URGENT') NOT NULL DEFAULT 'MEDIUM',
-  `created_by` VARCHAR(36) NOT NULL,
-  `assigned_to` VARCHAR(36) DEFAULT NULL,
+  `created_by` INT NOT NULL,
+  `assigned_to` INT DEFAULT NULL,
   `due_date` DATE DEFAULT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -216,10 +217,10 @@ CREATE TABLE `tasks` (
 -- Task assignments history
 DROP TABLE IF EXISTS `task_assignments`;
 CREATE TABLE `task_assignments` (
-  `id` VARCHAR(36) NOT NULL,
-  `task_id` VARCHAR(36) NOT NULL,
-  `assigned_by` VARCHAR(36) NOT NULL,
-  `assigned_to` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `task_id` INT NOT NULL,
+  `assigned_by` INT NOT NULL,
+  `assigned_to` INT NOT NULL,
   `assigned_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `unassigned_at` DATETIME DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -230,9 +231,9 @@ CREATE TABLE `task_assignments` (
 -- Task status history
 DROP TABLE IF EXISTS `task_status_history`;
 CREATE TABLE `task_status_history` (
-  `id` VARCHAR(36) NOT NULL,
-  `task_id` VARCHAR(36) NOT NULL,
-  `actor_id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `task_id` INT NOT NULL,
+  `actor_id` INT NOT NULL,
   `previous_status` VARCHAR(50) DEFAULT NULL,
   `new_status` VARCHAR(50) NOT NULL,
   `remark` TEXT DEFAULT NULL,
@@ -245,9 +246,9 @@ CREATE TABLE `task_status_history` (
 -- Task progress history
 DROP TABLE IF EXISTS `task_progress_history`;
 CREATE TABLE `task_progress_history` (
-  `id` VARCHAR(36) NOT NULL,
-  `task_id` VARCHAR(36) NOT NULL,
-  `actor_id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `task_id` INT NOT NULL,
+  `actor_id` INT NOT NULL,
   `progress_percent` INT NOT NULL DEFAULT 0,
   `notes` TEXT DEFAULT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -259,10 +260,10 @@ CREATE TABLE `task_progress_history` (
 -- Task creative versions
 DROP TABLE IF EXISTS `task_versions`;
 CREATE TABLE `task_versions` (
-  `id` VARCHAR(36) NOT NULL,
-  `task_id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `task_id` INT NOT NULL,
   `version_number` INT NOT NULL DEFAULT 1,
-  `submitted_by` VARCHAR(36) NOT NULL,
+  `submitted_by` INT NOT NULL,
   `file_name` VARCHAR(255) NOT NULL,
   `file_path` VARCHAR(500) NOT NULL,
   `storage_key` VARCHAR(255) NOT NULL,
@@ -278,9 +279,9 @@ CREATE TABLE `task_versions` (
 -- Task discussion comments
 DROP TABLE IF EXISTS `task_comments`;
 CREATE TABLE `task_comments` (
-  `id` VARCHAR(36) NOT NULL,
-  `task_id` VARCHAR(36) NOT NULL,
-  `user_id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `task_id` INT NOT NULL,
+  `user_id` INT NOT NULL,
   `comment` TEXT NOT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -291,12 +292,12 @@ CREATE TABLE `task_comments` (
 -- Task attachments
 DROP TABLE IF EXISTS `task_attachments`;
 CREATE TABLE `task_attachments` (
-  `id` VARCHAR(36) NOT NULL,
-  `task_id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `task_id` INT NOT NULL,
   `file_name` VARCHAR(255) NOT NULL,
   `file_path` VARCHAR(500) NOT NULL,
   `file_size` BIGINT NOT NULL,
-  `uploaded_by` VARCHAR(36) NOT NULL,
+  `uploaded_by` INT NOT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_att_task` (`task_id`),
@@ -310,16 +311,16 @@ CREATE TABLE `task_attachments` (
 -- Leads table
 DROP TABLE IF EXISTS `leads`;
 CREATE TABLE `leads` (
-  `id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
   `first_name` VARCHAR(100) NOT NULL,
   `last_name` VARCHAR(100) DEFAULT NULL,
   `email` VARCHAR(191) DEFAULT NULL,
   `phone` VARCHAR(30) NOT NULL,
   `source` VARCHAR(100) NOT NULL DEFAULT 'META_ADS',
-  `campaign_id` VARCHAR(36) DEFAULT NULL,
-  `ad_id` VARCHAR(36) DEFAULT NULL,
+  `campaign_id` INT DEFAULT NULL,
+  `ad_id` INT DEFAULT NULL,
   `status` ENUM('NEW', 'ASSIGNED', 'CONTACTED', 'INTERESTED', 'NOT_INTERESTED', 'QUALIFIED', 'CONVERTED', 'LOST') NOT NULL DEFAULT 'NEW',
-  `assigned_to` VARCHAR(36) DEFAULT NULL,
+  `assigned_to` INT DEFAULT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -336,10 +337,10 @@ CREATE TABLE `leads` (
 -- Lead assignment history
 DROP TABLE IF EXISTS `lead_assignments`;
 CREATE TABLE `lead_assignments` (
-  `id` VARCHAR(36) NOT NULL,
-  `lead_id` VARCHAR(36) NOT NULL,
-  `assigned_by` VARCHAR(36) NOT NULL,
-  `assigned_to` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `lead_id` INT NOT NULL,
+  `assigned_by` INT NOT NULL,
+  `assigned_to` INT NOT NULL,
   `assigned_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_la_lead` (`lead_id`),
@@ -349,9 +350,9 @@ CREATE TABLE `lead_assignments` (
 -- Lead status history
 DROP TABLE IF EXISTS `lead_status_history`;
 CREATE TABLE `lead_status_history` (
-  `id` VARCHAR(36) NOT NULL,
-  `lead_id` VARCHAR(36) NOT NULL,
-  `actor_id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `lead_id` INT NOT NULL,
+  `actor_id` INT NOT NULL,
   `previous_status` VARCHAR(50) DEFAULT NULL,
   `new_status` VARCHAR(50) NOT NULL,
   `reason` TEXT DEFAULT NULL,
@@ -364,9 +365,9 @@ CREATE TABLE `lead_status_history` (
 -- Call activities table
 DROP TABLE IF EXISTS `call_activities`;
 CREATE TABLE `call_activities` (
-  `id` VARCHAR(36) NOT NULL,
-  `lead_id` VARCHAR(36) NOT NULL,
-  `telecaller_id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `lead_id` INT NOT NULL,
+  `telecaller_id` INT NOT NULL,
   `outcome` ENUM('CONNECTED', 'NO_ANSWER', 'BUSY', 'WRONG_NUMBER', 'INTERESTED', 'NOT_INTERESTED', 'QUALIFIED') NOT NULL,
   `duration_seconds` INT NOT NULL DEFAULT 0,
   `remarks` TEXT DEFAULT NULL,
@@ -382,9 +383,9 @@ CREATE TABLE `call_activities` (
 -- Follow ups table
 DROP TABLE IF EXISTS `follow_ups`;
 CREATE TABLE `follow_ups` (
-  `id` VARCHAR(36) NOT NULL,
-  `lead_id` VARCHAR(36) NOT NULL,
-  `telecaller_id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `lead_id` INT NOT NULL,
+  `telecaller_id` INT NOT NULL,
   `due_date` DATETIME NOT NULL,
   `status` ENUM('PENDING', 'COMPLETED', 'OVERDUE', 'CANCELLED') NOT NULL DEFAULT 'PENDING',
   `notes` TEXT DEFAULT NULL,
@@ -405,10 +406,10 @@ CREATE TABLE `follow_ups` (
 -- Conversions table
 DROP TABLE IF EXISTS `conversions`;
 CREATE TABLE `conversions` (
-  `id` VARCHAR(36) NOT NULL,
-  `lead_id` VARCHAR(36) NOT NULL UNIQUE,
-  `campaign_id` VARCHAR(36) DEFAULT NULL,
-  `confirmed_by` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `lead_id` INT NOT NULL UNIQUE,
+  `campaign_id` INT DEFAULT NULL,
+  `confirmed_by` INT NOT NULL,
   `converted_value` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   `notes` TEXT DEFAULT NULL,
   `converted_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -422,14 +423,14 @@ CREATE TABLE `conversions` (
 -- Transactions table
 DROP TABLE IF EXISTS `transactions`;
 CREATE TABLE `transactions` (
-  `id` VARCHAR(36) NOT NULL,
-  `conversion_id` VARCHAR(36) NOT NULL,
-  `lead_id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `conversion_id` INT NOT NULL,
+  `lead_id` INT NOT NULL,
   `amount` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   `payment_status` ENUM('PENDING', 'COMPLETED', 'FAILED', 'REFUNDED') NOT NULL DEFAULT 'COMPLETED',
   `payment_method` VARCHAR(50) NOT NULL DEFAULT 'CREDIT_CARD',
   `transaction_ref` VARCHAR(100) NOT NULL UNIQUE,
-  `recorded_by` VARCHAR(36) NOT NULL,
+  `recorded_by` INT NOT NULL,
   `transaction_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -447,8 +448,8 @@ CREATE TABLE `transactions` (
 -- User notifications table
 DROP TABLE IF EXISTS `notifications`;
 CREATE TABLE `notifications` (
-  `id` VARCHAR(36) NOT NULL,
-  `user_id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `user_id` INT NOT NULL,
   `title` VARCHAR(150) NOT NULL,
   `message` TEXT NOT NULL,
   `type` ENUM('INFO', 'SUCCESS', 'WARNING', 'ALERT') NOT NULL DEFAULT 'INFO',
@@ -463,8 +464,8 @@ CREATE TABLE `notifications` (
 -- System Audit logs table
 DROP TABLE IF EXISTS `audit_logs`;
 CREATE TABLE `audit_logs` (
-  `id` VARCHAR(36) NOT NULL,
-  `actor_id` VARCHAR(36) DEFAULT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `actor_id` INT DEFAULT NULL,
   `action` VARCHAR(100) NOT NULL,
   `entity_type` VARCHAR(100) NOT NULL,
   `entity_id` VARCHAR(100) NOT NULL,
@@ -482,7 +483,7 @@ CREATE TABLE `audit_logs` (
 -- Aggregated Daily Performance metrics table
 DROP TABLE IF EXISTS `daily_performance`;
 CREATE TABLE `daily_performance` (
-  `id` VARCHAR(36) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
   `metric_date` DATE NOT NULL UNIQUE,
   `total_spend` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   `total_leads` INT NOT NULL DEFAULT 0,
